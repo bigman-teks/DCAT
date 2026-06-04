@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>NAF 115 SOG — DCAT</title>
+<title>NAF 115 SOG — MDMAS</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -323,9 +323,9 @@ tr:hover td{background:rgba(34,197,94,.04)}
         <div class="form-grid">
           <div class="fg"><label>Aircraft Type *</label><select id="mAcType"><option value="">Select...</option></select></div>
           <div class="fg"><label>Tail Number *</label><select id="mTail"><option value="">Select...</option></select></div>
-          <div class="fg"><label>Fuel Uplift (L)</label><input type="number" id="mFuelUp" oninput="calcFuel()"/></div>
-          <div class="fg"><label>Fuel Remaining (L)</label><input type="number" id="mFuelRem" oninput="calcFuel()"/></div>
-          <div class="fg"><label>Fuel Consumed (L)</label><input type="number" id="mFuelCon" readonly/></div>
+          <div class="fg"><label>Fuel Uplift (L)</label><input type="number" id="mFuelUp"/></div>
+          <div class="fg"><label>Fuel Remaining (L)</label><input type="number" id="mFuelRem"/></div>
+          <div class="fg"><label>Fuel Consumed (L)</label><input type="number" id="mFuelCon"/></div>
         </div>
       </div>
       <!-- Sortie Info -->
@@ -333,7 +333,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
         <div class="card-title">Sortie Information</div>
         <div class="form-grid">
           <div class="fg"><label>Number of Sorties *</label><input type="number" id="mSorties" min="1"/></div>
-          <div class="fg"><label>Flight Hours *</label><input type="number" id="mFlightHrs" step="0.1"/></div>
+          <div class="fg"><label>Flight Hours * (H:MM)</label><input type="text" id="mFlightHrs" placeholder="e.g. 2:45" maxlength="6" oninput="validateHHMM(this)"/></div>
           <div class="fg"><label>Takeoff Time</label><input type="time" id="mTakeoff"/></div>
           <div class="fg"><label>Landing Time</label><input type="time" id="mLanding"/></div>
           <div class="fg"><label>Block Time (hrs)</label><input type="number" id="mBlock" step="0.1"/></div>
@@ -902,9 +902,9 @@ async function loadRefData() {
     refData = { missionTypes:[], aircraftTypes:[], ranks:[], ...snap.data() };
   } else {
     refData = {
-      missionTypes:['Air Interdiction', 'Armed Recce','Patrol','Close Air Support','Intelligence Surveillance Reconnaissance','Search & Rescue','Logistics','Training','Show of Force'],
-      aircraftTypes:['T-129','EC-135','Mi-171','Mi-35','DA-62'],
-      ranks:['Flying Officer','Flight Lieutenant','Squadron Leader','Wing Commander','Group Captain','Air Commodore']
+      missionTypes:['Combat Air Patrol','Close Air Support','Intelligence Surveillance Reconnaissance','Search & Rescue','Logistics','Training','Humanitarian','Special Operations'],
+      aircraftTypes:['Alpha Jet','F-7Ni','Super Puma','Mi-35','C-130 Hercules','King Air','Agusta 109'],
+      ranks:['Cadet','Pilot Officer','Flying Officer','Flight Lieutenant','Squadron Leader','Wing Commander','Group Captain','Air Commodore','Air Vice Marshal','Air Marshal','Air Chief Marshal']
     };
     await setDoc(doc(db,'reference_data','main'), refData);
   }
@@ -947,7 +947,7 @@ function renderDashboard() {
 
   document.getElementById('kpiMissions').textContent = allMissions.length;
   document.getElementById('kpiSorties').textContent = totalSorties;
-  document.getElementById('kpiHours').textContent = totalHours.toFixed(1);
+  document.getElementById('kpiHours').textContent = decimalToHmm(totalHours);
   document.getElementById('kpiAircraft').textContent = activeAc;
   document.getElementById('kpiMonth').textContent = monthMissions.length;
   document.getElementById('kpiFuel').textContent = totalFuel.toLocaleString();
@@ -965,7 +965,7 @@ function renderDashboard() {
       <td>${m.operationName||'—'}</td>
       <td>${m.tailNumber||'—'}</td>
       <td>${m.sorties||0}</td>
-      <td>${(+m.flightHours||0).toFixed(1)}</td>
+      <td>${m.flightHoursDisplay || decimalToHmm(m.flightHours)}</td>
       <td>${outcomeBadge(m.outcome)}</td>
     </tr>`).join('') : `<tr><td colspan="8" class="empty-state">No mission data</td></tr>`;
 
@@ -1074,35 +1074,98 @@ function populateSelect(id, items) {
   if (cur) sel.value = cur;
 }
 
-function calcFuel() {
-  const up = +document.getElementById('mFuelUp').value || 0;
-  const rem = +document.getElementById('mFuelRem').value || 0;
-  document.getElementById('mFuelCon').value = Math.max(0, up - rem);
+function calcFuel() {} // Fuel consumed is now entered manually
+
+window.validateHHMM = function(input) {
+  // Allow digits and colon only
+  let v = input.value.replace(/[^0-9:]/g,'');
+  // Auto-insert colon after 1-3 digits if user didn't type one
+  if (!v.includes(':') && v.length >= 2) {
+    // insert colon before last 2 chars if length >= 3, else after first char
+    const hPart = v.length > 2 ? v.slice(0, v.length - 2) : v.slice(0,1);
+    const mPart = v.length > 2 ? v.slice(v.length - 2) : v.slice(1);
+    v = hPart + ':' + mPart;
+  }
+  // Clamp minutes to 59
+  if (v.includes(':')) {
+    let [h, m] = v.split(':');
+    if (m && +m > 59) m = '59';
+    v = h + ':' + (m||'');
+  }
+  input.value = v;
+};
+
+// Convert H:MM string to decimal hours for storage
+function hmmToDecimal(str) {
+  if (!str || !str.includes(':')) return parseFloat(str) || 0;
+  const [h, m] = str.split(':');
+  return (parseInt(h)||0) + (parseInt(m)||0)/60;
 }
 
-function addCrewRow() {
+// Convert decimal hours back to H:MM for display
+function decimalToHmm(dec) {
+  if (!dec && dec !== 0) return '—';
+  const h = Math.floor(dec);
+  const m = Math.round((dec - h) * 60);
+  return `${h}:${String(m).padStart(2,'0')}`;
+}
+
+function addCrewRow(prefill) {
   const container = document.getElementById('crewRows');
-  const idx = container.children.length;
   const div = document.createElement('div');
   div.className = 'crew-row';
+  // Build crew name options from allCrew register
+  const crewOptions = allCrew
+    .filter(c => c.status === 'Active')
+    .map(c => `<option value="${c.id}" data-rank="${c.rank||''}" data-svc="${c.serviceNumber||''}" data-name="${c.name||''}">${c.rank ? c.rank+' ' : ''}${c.name}</option>`)
+    .join('');
   div.innerHTML = `
-    <div class="fg" style="margin:0"><label style="font-size:10px">ROLE</label><input type="text" class="cr-role" placeholder="e.g. Pilot"/></div>
-    <div class="fg" style="margin:0"><label style="font-size:10px">SVC NO.</label><input type="text" class="cr-svc"/></div>
-    <div class="fg" style="margin:0"><label style="font-size:10px">RANK</label><select class="cr-rank"><option value="">Rank</option>${refData.ranks.map(r=>`<option>${r}</option>`).join('')}</select></div>
-    <div class="fg" style="margin:0"><label style="font-size:10px">NAME</label><input type="text" class="cr-name"/></div>
-    <div class="fg" style="margin:0"><label style="font-size:10px">HRS FLOWN</label><input type="number" class="cr-hrs" step="0.1"/></div>
+    <div class="fg" style="margin:0"><label style="font-size:10px">ROLE</label><input type="text" class="cr-role" placeholder="e.g. Pilot" value="${prefill?.role||''}"/></div>
+    <div class="fg" style="margin:0"><label style="font-size:10px">SVC NO.</label><input type="text" class="cr-svc" readonly placeholder="Auto-filled" value="${prefill?.serviceNumber||''}" style="background:var(--bg);color:var(--muted)"/></div>
+    <div class="fg" style="margin:0"><label style="font-size:10px">RANK</label><input type="text" class="cr-rank" readonly placeholder="Auto-filled" value="${prefill?.rank||''}" style="background:var(--bg);color:var(--muted)"/></div>
+    <div class="fg" style="margin:0"><label style="font-size:10px">NAME</label>
+      <select class="cr-name" onchange="onCrewNameSelect(this)">
+        <option value="">-- Select Crew --</option>
+        ${crewOptions}
+      </select>
+    </div>
+    <div class="fg" style="margin:0"><label style="font-size:10px">HRS FLOWN (H:MM)</label><input type="text" class="cr-hrs" placeholder="e.g. 1:30" maxlength="6" oninput="validateHHMM(this)" value="${prefill?.hoursFlown||''}"/></div>
     <button class="btn btn-danger btn-sm cr-del" onclick="this.parentElement.remove()" style="align-self:flex-end;padding:7px 10px">✕</button>`;
   container.appendChild(div);
+  // If prefilling from saved mission, set the select to match by name
+  if (prefill?.name) {
+    const sel = div.querySelector('.cr-name');
+    const match = allCrew.find(c => c.name === prefill.name);
+    if (match) sel.value = match.id;
+    else {
+      // Crew may have been removed; add a ghost option
+      const ghost = document.createElement('option');
+      ghost.value = ''; ghost.textContent = prefill.name; ghost.selected = true;
+      sel.insertBefore(ghost, sel.options[1]);
+    }
+  }
 }
 
+window.onCrewNameSelect = function(sel) {
+  const row = sel.closest('.crew-row');
+  const opt = sel.options[sel.selectedIndex];
+  row.querySelector('.cr-rank').value = opt.dataset.rank || '';
+  row.querySelector('.cr-svc').value  = opt.dataset.svc  || '';
+};
+
 function getCrewManifest() {
-  return [...document.querySelectorAll('#crewRows .crew-row')].map(row => ({
-    role: row.querySelector('.cr-role').value,
-    serviceNumber: row.querySelector('.cr-svc').value,
-    rank: row.querySelector('.cr-rank').value,
-    name: row.querySelector('.cr-name').value,
-    hoursFlown: +row.querySelector('.cr-hrs').value || 0
-  })).filter(c => c.name);
+  return [...document.querySelectorAll('#crewRows .crew-row')].map(row => {
+    const sel = row.querySelector('.cr-name');
+    const opt = sel.options[sel.selectedIndex];
+    const name = opt?.dataset?.name || opt?.textContent?.trim() || '';
+    return {
+      role: row.querySelector('.cr-role').value,
+      serviceNumber: row.querySelector('.cr-svc').value,
+      rank: row.querySelector('.cr-rank').value,
+      name,
+      hoursFlown: row.querySelector('.cr-hrs').value
+    };
+  }).filter(c => c.name);
 }
 
 async function saveMission() {
@@ -1138,7 +1201,8 @@ async function saveMission() {
       fuelRemaining: +document.getElementById('mFuelRem').value || 0,
       fuelConsumed: +document.getElementById('mFuelCon').value || 0,
       sorties: +mSorties,
-      flightHours: +mHrs,
+      flightHours: hmmToDecimal(mHrs),
+      flightHoursDisplay: mHrs,
       takeoffTime: document.getElementById('mTakeoff').value,
       landingTime: document.getElementById('mLanding').value,
       blockTime: +document.getElementById('mBlock').value || 0,
@@ -1231,7 +1295,7 @@ function drawRecords() {
       <td>${m.operationName||'—'}</td>
       <td>${m.tailNumber||'—'}</td>
       <td>${m.sorties||0}</td>
-      <td>${(+m.flightHours||0).toFixed(1)}</td>
+      <td>${m.flightHoursDisplay || decimalToHmm(m.flightHours)}</td>
       <td>${outcomeBadge(m.outcome)}</td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="viewMission('${m.id}')">👁</button>
@@ -1309,7 +1373,7 @@ async function editMission(id) {
     document.getElementById('mFuelRem').value = m.fuelRemaining||'';
     document.getElementById('mFuelCon').value = m.fuelConsumed||'';
     document.getElementById('mSorties').value = m.sorties||'';
-    document.getElementById('mFlightHrs').value = m.flightHours||'';
+            document.getElementById('mFlightHrs').value = m.flightHoursDisplay || decimalToHmm(m.flightHours);
     document.getElementById('mTakeoff').value = m.takeoffTime||'';
     document.getElementById('mLanding').value = m.landingTime||'';
     document.getElementById('mBlock').value = m.blockTime||'';
@@ -1321,15 +1385,7 @@ async function editMission(id) {
     // Crew
     const cont = document.getElementById('crewRows');
     cont.innerHTML = '';
-    (m.crew||[]).forEach(c => {
-      addCrewRow();
-      const row = cont.lastElementChild;
-      row.querySelector('.cr-role').value = c.role||'';
-      row.querySelector('.cr-svc').value = c.serviceNumber||'';
-      row.querySelector('.cr-rank').value = c.rank||'';
-      row.querySelector('.cr-name').value = c.name||'';
-      row.querySelector('.cr-hrs').value = c.hoursFlown||'';
-    });
+    (m.crew||[]).forEach(c => addCrewRow(c));
   }, 100);
 }
 
