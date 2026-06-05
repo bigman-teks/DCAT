@@ -6,22 +6,13 @@
 <title>NAF 115 SOG — MDMAS</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
---bg:#0A0E1A;--panel:#111827;--panel2:#1a2235;--border:#1e2d45;
---primary:#22C55E;--primary-dim:#166534;--warn:#F59E0B;--danger:#EF4444;
---text:#e2e8f0;--muted:#64748b;--accent:#38bdf8;
-}
+:root{--bg:#0A0E1A;--panel:#111827;--panel2:#1a2235;--border:#1e2d45;--primary:#22C55E;--primary-dim:#166534;--warn:#F59E0B;--danger:#EF4444;--text:#e2e8f0;--muted:#64748b;--accent:#38bdf8;}
 body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 .mono{font-family:'Share Tech Mono',monospace}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--panel)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-
-/* ── LOGIN ── */
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--panel)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 #loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);position:relative;overflow:hidden}
 #loginPage::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(34,197,94,.08) 0%,transparent 70%)}
 .login-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:40px;width:100%;max-width:440px;position:relative;z-index:1}
@@ -35,20 +26,15 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);mi
 .form-group label{display:block;font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:6px}
 .form-group input{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:border .2s}
 .form-group input:focus{border-color:var(--primary)}
-.pw-wrap{position:relative}
-.pw-wrap input{padding-right:42px}
-.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:18px;background:none;border:none;color:var(--muted)}
+.pw-wrap{position:relative}.pw-wrap input{padding-right:42px}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;background:none;border:none;color:var(--muted)}
 .form-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:13px}
 .form-row label{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
 .form-row a{color:var(--primary);text-decoration:none}
 .btn-login{width:100%;background:var(--primary);color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer;transition:all .2s}
 .btn-login:hover{background:#16a34a;box-shadow:0 0 20px rgba(34,197,94,.3)}
 .login-err{background:rgba(239,68,68,.1);border:1px solid var(--danger);border-radius:6px;padding:10px;text-align:center;font-size:13px;color:var(--danger);margin-bottom:12px;display:none}
-
-/* ── APP SHELL ── */
 #appShell{display:none;flex-direction:row;min-height:100vh}
-
-/* ── SIDEBAR ── */
 #sidebar{width:240px;min-height:100vh;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .25s;position:fixed;top:0;left:0;z-index:200;overflow:hidden}
 #sidebar.collapsed{width:60px}
 .sb-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-height:64px}
@@ -60,14 +46,10 @@ nav{flex:1;overflow-y:auto;padding:8px 0}
 .nav-item:hover{background:rgba(34,197,94,.08);color:var(--text)}
 .nav-item.active{background:rgba(34,197,94,.12);color:var(--primary);border-left-color:var(--primary)}
 .nav-item .ni{font-size:18px;flex-shrink:0}
-.nav-item span{letter-spacing:.5px}
 #sidebar.collapsed .nav-item span{display:none}
 #sidebar.collapsed .sb-title{display:none}
-
-/* ── HEADER ── */
 #topbar{position:fixed;top:0;left:240px;right:0;height:60px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;z-index:100;transition:left .25s}
 #topbar.collapsed{left:60px}
-.tb-brand{display:flex;align-items:center;gap:8px}
 .tb-brand span{font-size:13px;color:var(--muted)}
 .tb-center{flex:1;text-align:center;font-size:12px;letter-spacing:2px;color:var(--muted);font-weight:600}
 .tb-right{display:flex;align-items:center;gap:16px;font-size:12px}
@@ -76,45 +58,28 @@ nav{flex:1;overflow-y:auto;padding:8px 0}
 .tb-user .name{color:var(--text);font-weight:600;font-size:13px}
 .tb-user .role{color:var(--muted);font-size:11px}
 .badge-restricted{background:#b91c1c;color:#fff;font-size:9px;letter-spacing:2px;padding:2px 8px;border-radius:3px;font-weight:700}
-
-/* ── MAIN CONTENT ── */
 #mainContent{margin-left:240px;margin-top:60px;min-height:calc(100vh - 60px);padding:24px;transition:margin-left .25s;flex:1}
 #mainContent.collapsed{margin-left:60px}
-
-/* ── PAGE SECTIONS ── */
-.page{display:none}
-.page.active{display:block}
+.page{display:none}.page.active{display:block}
 .page-title{font-size:22px;font-weight:700;color:var(--primary);letter-spacing:2px;margin-bottom:4px}
 .page-sub{font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:24px}
-
-/* ── KPI CARDS ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:24px}
 .kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;transition:transform .2s}
 .kpi-card:hover{transform:translateY(-2px)}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-.kpi-card.green::before{background:var(--primary)}
-.kpi-card.blue::before{background:var(--accent)}
-.kpi-card.warn::before{background:var(--warn)}
-.kpi-card.red::before{background:var(--danger)}
+.kpi-card.green::before{background:var(--primary)}.kpi-card.blue::before{background:var(--accent)}
+.kpi-card.warn::before{background:var(--warn)}.kpi-card.red::before{background:var(--danger)}
 .kpi-icon{font-size:28px;margin-bottom:8px}
 .kpi-val{font-size:28px;font-weight:700;font-family:'Share Tech Mono',monospace;color:var(--primary)}
-.kpi-card.blue .kpi-val{color:var(--accent)}
-.kpi-card.warn .kpi-val{color:var(--warn)}
-.kpi-card.red .kpi-val{color:var(--danger)}
+.kpi-card.blue .kpi-val{color:var(--accent)}.kpi-card.warn .kpi-val{color:var(--warn)}.kpi-card.red .kpi-val{color:var(--danger)}
 .kpi-label{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:4px}
 .kpi-glow{position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.06}
-.kpi-card.green .kpi-glow{background:var(--primary)}
-.kpi-card.blue .kpi-glow{background:var(--accent)}
-.kpi-card.warn .kpi-glow{background:var(--warn)}
-.kpi-card.red .kpi-glow{background:var(--danger)}
-
-/* ── CHARTS ── */
+.kpi-card.green .kpi-glow{background:var(--primary)}.kpi-card.blue .kpi-glow{background:var(--accent)}
+.kpi-card.warn .kpi-glow{background:var(--warn)}.kpi-card.red .kpi-glow{background:var(--danger)}
 .chart-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:24px}
 .chart-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px}
 .chart-card h3{font-size:13px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;text-transform:uppercase}
 .chart-wrap{position:relative;height:200px}
-
-/* ── TABLES ── */
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead tr{border-bottom:1px solid var(--border)}
@@ -127,65 +92,44 @@ tr:hover td{background:rgba(34,197,94,.04)}
 .badge-danger{background:rgba(239,68,68,.15);color:var(--danger)}
 .badge-info{background:rgba(56,189,248,.15);color:var(--accent)}
 .badge-gray{background:rgba(100,116,139,.15);color:var(--muted)}
-
-/* ── FORMS ── */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
 .card-title{font-size:14px;font-weight:700;color:var(--primary);letter-spacing:1px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);text-transform:uppercase}
 .fg{margin-bottom:14px}
 .fg label{display:block;font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:5px;text-transform:uppercase}
 .fg input,.fg select,.fg textarea{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:border .2s}
-.fg input:focus,.fg select,.fg textarea:focus{border-color:var(--primary)}
-.fg select{cursor:pointer}
-.fg textarea{resize:vertical;min-height:90px}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--primary)}
+.fg select{cursor:pointer}.fg textarea{resize:vertical;min-height:90px}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:600px){.form-grid-2{grid-template-columns:1fr}}
-
-/* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;letter-spacing:.5px;transition:all .2s}
-.btn-primary{background:var(--primary);color:#000}
-.btn-primary:hover{background:#16a34a;box-shadow:0 0 14px rgba(34,197,94,.3)}
-.btn-secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--primary);color:var(--primary)}
-.btn-danger{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
-.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-primary{background:var(--primary);color:#000}.btn-primary:hover{background:#16a34a;box-shadow:0 0 14px rgba(34,197,94,.3)}
+.btn-secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.3)}.btn-danger:hover{background:var(--danger);color:#fff}
 .btn-sm{padding:5px 10px;font-size:12px}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-
-/* ── CREW ROWS ── */
-.crew-row{display:grid;grid-template-columns:110px 120px 1fr 1fr 90px 36px;gap:8px;align-items:end;margin-bottom:8px}
-@media(max-width:768px){.crew-row{grid-template-columns:1fr 1fr;} .crew-row .cr-del{grid-column:span 2;}}
-
-/* ── MODAL ── */
+.crew-row{display:grid;grid-template-columns:110px 120px 1fr 1fr 100px 36px;gap:8px;align-items:end;margin-bottom:8px}
+@media(max-width:768px){.crew-row{grid-template-columns:1fr 1fr}}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;padding:16px}
 .modal-overlay.open{display:flex}
 .modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto}
 .modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .modal-header h2{font-size:16px;font-weight:700;color:var(--primary);letter-spacing:1px}
 .modal-body{padding:20px}
-.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
-.modal-close:hover{color:var(--danger)}
-
-/* ── NOTIFICATIONS ── */
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}.modal-close:hover{color:var(--danger)}
 #notif{position:fixed;top:70px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px}
 .notif-item{background:var(--panel);border-radius:8px;padding:12px 16px;font-size:13px;border-left:4px solid;min-width:260px;animation:slideIn .3s ease;display:flex;align-items:center;gap:10px}
 .notif-item.success{border-color:var(--primary);color:var(--primary)}
 .notif-item.error{border-color:var(--danger);color:var(--danger)}
 .notif-item.warn{border-color:var(--warn);color:var(--warn)}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-
-/* ── LOADING ── */
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,26,.85);z-index:800;align-items:center;justify-content:center;flex-direction:column;gap:16px}
 .loading-overlay.show{display:flex}
 .loading-overlay p{color:var(--primary);letter-spacing:2px;font-size:13px}
-
-/* ── MISC ── */
-.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
 .text-muted{color:var(--muted);font-size:12px}
 .empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
-.empty-state .es-icon{font-size:48px;margin-bottom:12px}
 .search-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .search-bar input,.search-bar select{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none}
 .search-bar input:focus,.search-bar select:focus{border-color:var(--primary)}
@@ -194,20 +138,13 @@ tr:hover td{background:rgba(34,197,94,.04)}
 .pg-btn{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:5px 10px;color:var(--text);cursor:pointer;font-size:13px}
 .pg-btn:hover,.pg-btn.active{border-color:var(--primary);color:var(--primary)}
 .info-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px}
-.info-item{font-size:13px} .info-item span{color:var(--muted);font-size:11px;display:block}
+.info-item{font-size:13px}.info-item span{color:var(--muted);font-size:11px;display:block}
 .section-divider{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-@media(max-width:768px){
-  #sidebar{width:60px}#sidebar.open{width:240px}
-  #topbar{left:60px}.tb-center{display:none}
-  #mainContent{margin-left:60px}
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  .chart-grid{grid-template-columns:1fr}
-}
+@media(max-width:768px){#sidebar{width:60px}#topbar{left:60px}.tb-center{display:none}#mainContent{margin-left:60px}.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<!-- ══════════════ LOGIN ══════════════ -->
 <div id="loginPage">
   <div class="login-box">
     <div class="class-banner">⚠ RESTRICTED — AUTHORISED PERSONNEL ONLY ⚠</div>
@@ -218,64 +155,36 @@ tr:hover td{background:rgba(34,197,94,.04)}
       <h3>MISSION DATA MANAGEMENT & ANALYSIS SYSTEM</h3>
     </div>
     <div class="login-err" id="loginErr"></div>
-    <div class="form-group">
-      <label>SERVICE EMAIL</label>
-      <input type="email" id="loginEmail" placeholder="user@airforce.mil.ng" autocomplete="username"/>
+    <div class="form-group"><label>SERVICE EMAIL</label><input type="email" id="loginEmail" placeholder="user@airforce.mil.ng" autocomplete="username"/></div>
+    <div class="form-group"><label>PASSWORD</label>
+      <div class="pw-wrap"><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/><button class="pw-toggle" onclick="togglePw('loginPass',this)">👁</button></div>
     </div>
-    <div class="form-group">
-      <label>PASSWORD</label>
-      <div class="pw-wrap">
-        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/>
-        <button class="pw-toggle" onclick="togglePw('loginPass',this)">👁</button>
-      </div>
-    </div>
-    <div class="form-row">
-      <label><input type="checkbox" id="rememberMe"/> Remember Me</label>
-      <a href="#" onclick="showForgot()">Forgot Password?</a>
-    </div>
-    <button class="btn-login" onclick="doLogin()" id="loginBtn">🔒 SECURE LOGIN</button>
+    <div class="form-row"><label><input type="checkbox" id="rememberMe"/> Remember Me</label><a href="#" onclick="showForgot()">Forgot Password?</a></div>
+    <button class="btn-login" onclick="doLogin()">🔒 SECURE LOGIN</button>
     <p style="text-align:center;margin-top:14px;font-size:11px;color:var(--muted)">RESTRICTED SYSTEM — UNAUTHORISED ACCESS PROHIBITED</p>
   </div>
 </div>
 
-<!-- ══════════════ APP SHELL ══════════════ -->
 <div id="appShell">
-
-  <!-- SIDEBAR -->
   <nav id="sidebar">
-    <div class="sb-header">
-      <span class="sb-logo">✈</span>
-      <span class="sb-title">NAF 115 SOG</span>
-      <button class="sb-toggle" onclick="toggleSidebar()">☰</button>
-    </div>
+    <div class="sb-header"><span class="sb-logo">✈</span><span class="sb-title">NAF 115 SOG</span><button class="sb-toggle" onclick="toggleSidebar()">☰</button></div>
     <nav id="navMenu"></nav>
   </nav>
-
-  <!-- TOPBAR -->
   <header id="topbar">
     <div class="tb-brand"><span class="mono" style="color:var(--primary)">NAF 115 SOG</span></div>
     <div class="tb-center">MISSION DATA MANAGEMENT & ANALYSIS SYSTEM</div>
     <div class="tb-right">
-      <div>
-        <div class="tb-clock mono" id="clockEl">--:--:--</div>
-        <div style="font-size:10px;color:var(--muted)" id="dateEl">--</div>
-      </div>
-      <div class="tb-user">
-        <span class="name" id="tbName">—</span>
-        <span class="role" id="tbRole">—</span>
-      </div>
+      <div><div class="tb-clock mono" id="clockEl">--:--:--</div><div style="font-size:10px;color:var(--muted)" id="dateEl">--</div></div>
+      <div class="tb-user"><span class="name" id="tbName">—</span><span class="role" id="tbRole">—</span></div>
       <span class="badge-restricted">RESTRICTED</span>
     </div>
   </header>
-
-  <!-- MAIN CONTENT -->
   <main id="mainContent">
 
-    <!-- ── DASHBOARD ── -->
+    <!-- DASHBOARD -->
     <div class="page active" id="pageDashboard">
-      <div class="page-title">COMMAND DASHBOARD</div>
-      <div class="page-sub mono">REAL-TIME OPERATIONAL OVERVIEW</div>
-      <div class="kpi-grid" id="kpiGrid">
+      <div class="page-title">COMMAND DASHBOARD</div><div class="page-sub mono">REAL-TIME OPERATIONAL OVERVIEW</div>
+      <div class="kpi-grid">
         <div class="kpi-card green"><div class="kpi-icon">🎯</div><div class="kpi-val" id="kpiMissions">—</div><div class="kpi-label">TOTAL MISSIONS</div><div class="kpi-glow"></div></div>
         <div class="kpi-card blue"><div class="kpi-icon">🛫</div><div class="kpi-val" id="kpiSorties">—</div><div class="kpi-label">TOTAL SORTIES</div><div class="kpi-glow"></div></div>
         <div class="kpi-card warn"><div class="kpi-icon">⏱</div><div class="kpi-val" id="kpiHours">—</div><div class="kpi-label">FLIGHT HOURS</div><div class="kpi-glow"></div></div>
@@ -293,20 +202,39 @@ tr:hover td{background:rgba(34,197,94,.04)}
         <div class="chart-card"><h3>Fuel Consumption Trend</h3><div class="chart-wrap"><canvas id="chartFuel"></canvas></div></div>
         <div class="chart-card"><h3>Operational Tempo (Weekly)</h3><div class="chart-wrap"><canvas id="chartTempo"></canvas></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">Recent Missions</div>
+      <div class="card"><div class="card-title">Recent Missions</div>
         <div class="tbl-wrap"><table><thead><tr><th>Mission No.</th><th>Date</th><th>Type</th><th>Operation</th><th>Aircraft</th><th>Sorties</th><th>Flight Hrs</th><th>Outcome</th></tr></thead><tbody id="recentMissionsTbl"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody></table></div>
       </div>
     </div>
 
-    <!-- ── MISSION DATA ENTRY ── -->
+    <!-- MISSION DATA ENTRY -->
     <div class="page" id="pageMissionEntry">
-      <div class="page-title">MISSION DATA ENTRY</div>
-      <div class="page-sub mono">LOG NEW MISSION RECORD TO FIRESTORE</div>
+      <div class="page-title">MISSION DATA ENTRY</div><div class="page-sub mono">LOG NEW MISSION RECORD TO FIRESTORE</div>
+      <div class="card" style="border-color:var(--warn)">
+        <div class="card-title" style="color:var(--warn)">📥 BULK IMPORT FROM EXCEL</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Upload your existing Excel (.xlsx/.xls) or CSV file. The system will preview and map columns before importing.</p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none"/>
+          <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📂 Choose File</button>
+          <span id="importFileName" style="font-size:13px;color:var(--muted)">No file selected</span>
+          <a href="#" onclick="downloadTemplate()" style="font-size:12px;color:var(--primary);margin-left:auto">⬇ Download Template</a>
+        </div>
+        <div id="importMapper" style="display:none;margin-top:16px">
+          <div class="section-divider">COLUMN MAPPING</div>
+          <div class="form-grid" id="mapperGrid"></div>
+          <div id="importPreview" style="margin-top:14px"></div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="runImport()">⚡ IMPORT ALL RECORDS</button>
+            <button class="btn btn-secondary" onclick="cancelImport()">✕ Cancel</button>
+          </div>
+          <div id="importProgress" style="margin-top:12px;display:none">
+            <div style="background:var(--panel2);border-radius:6px;overflow:hidden;height:10px"><div id="importBar" style="height:10px;background:var(--primary);width:0%;transition:width .2s;border-radius:6px"></div></div>
+            <p id="importStatus" style="font-size:12px;color:var(--muted);margin-top:6px"></p>
+          </div>
+        </div>
+      </div>
       <form onsubmit="return false">
-      <!-- Mission Info -->
-      <div class="card">
-        <div class="card-title">Mission Information</div>
+      <div class="card"><div class="card-title">Mission Information</div>
         <div class="form-grid">
           <div class="fg"><label>Mission Date *</label><input type="date" id="mDate"/></div>
           <div class="fg"><label>Mission Number</label><input type="text" id="mNumber" readonly placeholder="Auto-generated"/></div>
@@ -317,9 +245,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <div class="fg"><label>Mission Priority</label><select id="mPriority"><option>ROUTINE</option><option>PRIORITY</option><option>IMMEDIATE</option><option>FLASH</option></select></div>
         </div>
       </div>
-      <!-- Aircraft Info -->
-      <div class="card">
-        <div class="card-title">Aircraft Information</div>
+      <div class="card"><div class="card-title">Aircraft Information</div>
         <div class="form-grid">
           <div class="fg"><label>Aircraft Type *</label><select id="mAcType"><option value="">Select...</option></select></div>
           <div class="fg"><label>Tail Number *</label><select id="mTail"><option value="">Select...</option></select></div>
@@ -328,9 +254,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <div class="fg"><label>Fuel Consumed (L)</label><input type="number" id="mFuelCon"/></div>
         </div>
       </div>
-      <!-- Sortie Info -->
-      <div class="card">
-        <div class="card-title">Sortie Information</div>
+      <div class="card"><div class="card-title">Sortie Information</div>
         <div class="form-grid">
           <div class="fg"><label>Number of Sorties *</label><input type="number" id="mSorties" min="1"/></div>
           <div class="fg"><label>Flight Hours * (H:MM)</label><input type="text" id="mFlightHrs" placeholder="e.g. 2:45" maxlength="6" oninput="validateHHMM(this)"/></div>
@@ -339,32 +263,20 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <div class="fg"><label>Block Time (hrs)</label><input type="number" id="mBlock" step="0.1"/></div>
         </div>
       </div>
-      <!-- Crew Manifest -->
-      <div class="card">
-        <div class="card-title">Aircrew Manifest</div>
+      <div class="card"><div class="card-title">Aircrew Manifest</div>
         <div id="crewRows"></div>
         <button class="btn btn-secondary btn-sm" onclick="addCrewRow()">+ Add Crew Member</button>
       </div>
-      <!-- Outcome -->
-      <div class="card">
-        <div class="card-title">Mission Outcome</div>
+      <div class="card"><div class="card-title">Mission Outcome</div>
         <div class="form-grid">
           <div class="fg"><label>Outcome *</label>
-            <select id="mOutcome">
-              <option value="Successful">Successful</option>
-              <option value="Partially Successful">Partially Successful</option>
-              <option value="Failed">Failed</option>
-              <option value="Aborted">Aborted</option>
-            </select>
+            <select id="mOutcome"><option value="Successful">Successful</option><option value="Partially Successful">Partially Successful</option><option value="Failed">Failed</option><option value="Aborted">Aborted</option></select>
           </div>
         </div>
         <div class="fg"><label>Mission Remarks</label><textarea id="mRemarks" rows="4"></textarea></div>
       </div>
-      <!-- Attachments -->
-      <div class="card">
-        <div class="card-title">Attachments</div>
+      <div class="card"><div class="card-title">Attachments</div>
         <div class="fg"><label>Upload Files (Images, PDFs, Flight Logs)</label><input type="file" id="mFiles" multiple accept="image/*,.pdf,.doc,.docx" style="padding:6px"/></div>
-        <div id="uploadProgress"></div>
       </div>
       <div class="btn-group">
         <button class="btn btn-primary" onclick="saveMission()">💾 SAVE MISSION</button>
@@ -373,53 +285,36 @@ tr:hover td{background:rgba(34,197,94,.04)}
       </form>
     </div>
 
-    <!-- ── MISSION RECORDS ── -->
+    <!-- MISSION RECORDS -->
     <div class="page" id="pageMissionRecords">
-      <div class="page-title">MISSION RECORDS</div>
-      <div class="page-sub mono">FIRESTORE-POWERED MISSION DATABASE</div>
+      <div class="page-title">MISSION RECORDS</div><div class="page-sub mono">FIRESTORE-POWERED MISSION DATABASE</div>
       <div class="card">
         <div class="search-bar">
           <input type="text" id="recSearch" placeholder="Search missions..." oninput="filterRecords()"/>
           <select id="recType" onchange="filterRecords()"><option value="">All Types</option></select>
-          <select id="recOutcome" onchange="filterRecords()">
-            <option value="">All Outcomes</option>
-            <option>Successful</option><option>Partially Successful</option><option>Failed</option><option>Aborted</option>
-          </select>
-          <select id="recMonth" onchange="filterRecords()">
-            <option value="">All Months</option>
-            <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option>
-            <option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option>
-            <option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option>
-            <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-          </select>
+          <select id="recOutcome" onchange="filterRecords()"><option value="">All Outcomes</option><option>Successful</option><option>Partially Successful</option><option>Failed</option><option>Aborted</option></select>
+          <select id="recMonth" onchange="filterRecords()"><option value="">All Months</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select>
           <select id="recYear" onchange="filterRecords()"><option value="">All Years</option></select>
           <button class="btn btn-secondary btn-sm" onclick="exportCSV()">📥 CSV</button>
           <button class="btn btn-secondary btn-sm" onclick="exportExcel()">📊 Excel</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Mission No.</th><th>Date</th><th>Type</th><th>Operation</th><th>Aircraft</th><th>Sorties</th><th>Hrs</th><th>Outcome</th><th>Actions</th></tr></thead>
-            <tbody id="recordsTbl"></tbody>
-          </table>
-        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Mission No.</th><th>Date</th><th>Type</th><th>Operation</th><th>Aircraft</th><th>Sorties</th><th>Hrs</th><th>Outcome</th><th>Actions</th></tr></thead><tbody id="recordsTbl"></tbody></table></div>
         <div class="pagination" id="recPagination"></div>
       </div>
     </div>
 
-    <!-- ── ANALYSIS ── -->
+    <!-- ANALYSIS -->
     <div class="page" id="pageAnalysis">
-      <div class="page-title">ANALYSIS & STATISTICS</div>
-      <div class="page-sub mono">ADVANCED OPERATIONAL ANALYTICS</div>
+      <div class="page-title">ANALYSIS & STATISTICS</div><div class="page-sub mono">ADVANCED OPERATIONAL ANALYTICS</div>
       <div class="card" style="margin-bottom:16px">
         <div class="search-bar">
-          <input type="date" id="anFrom" onchange="loadAnalysis()"/>
-          <input type="date" id="anTo" onchange="loadAnalysis()"/>
-          <select id="anAircraft" onchange="loadAnalysis()"><option value="">All Aircraft</option></select>
-          <select id="anMType" onchange="loadAnalysis()"><option value="">All Mission Types</option></select>
+          <input type="date" id="anFrom"/><input type="date" id="anTo"/>
+          <select id="anAircraft"><option value="">All Aircraft</option></select>
+          <select id="anMType"><option value="">All Mission Types</option></select>
           <button class="btn btn-primary btn-sm" onclick="loadAnalysis()">🔍 ANALYSE</button>
         </div>
       </div>
-      <div class="chart-grid" id="analysisCharts">
+      <div class="chart-grid">
         <div class="chart-card"><h3>Missions by Type</h3><div class="chart-wrap"><canvas id="anChart1"></canvas></div></div>
         <div class="chart-card"><h3>Sorties by Type</h3><div class="chart-wrap"><canvas id="anChart2"></canvas></div></div>
         <div class="chart-card"><h3>Flight Hours by Type</h3><div class="chart-wrap"><canvas id="anChart3"></canvas></div></div>
@@ -429,35 +324,23 @@ tr:hover td{background:rgba(34,197,94,.04)}
       </div>
     </div>
 
-    <!-- ── MONTHLY REPORTS ── -->
+    <!-- MONTHLY REPORTS -->
     <div class="page" id="pageReports">
-      <div class="page-title">MONTHLY REPORTS</div>
-      <div class="page-sub mono">COMMAND-LEVEL OPERATIONAL REPORTS</div>
+      <div class="page-title">MONTHLY REPORTS</div><div class="page-sub mono">COMMAND-LEVEL OPERATIONAL REPORTS</div>
       <div class="card">
         <div class="form-grid-2">
-          <div class="fg"><label>Report Month</label>
-            <select id="repMonth">
-              <option value="01">January</option><option value="02">February</option><option value="03">March</option>
-              <option value="04">April</option><option value="05">May</option><option value="06">June</option>
-              <option value="07">July</option><option value="08">August</option><option value="09">September</option>
-              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-            </select>
-          </div>
+          <div class="fg"><label>Report Month</label><select id="repMonth"><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
           <div class="fg"><label>Report Year</label><input type="number" id="repYear" value="2025"/></div>
         </div>
-        <div class="fg"><label>Command Remarks</label><textarea id="repRemarks" rows="3" placeholder="Enter command remarks for this period..."></textarea></div>
-        <div class="btn-group">
-          <button class="btn btn-primary" onclick="generateReport()">📄 GENERATE REPORT</button>
-          <button class="btn btn-secondary" onclick="printReport()">🖨 PRINT</button>
-        </div>
+        <div class="fg"><label>Command Remarks</label><textarea id="repRemarks" rows="3" placeholder="Enter command remarks..."></textarea></div>
+        <div class="btn-group"><button class="btn btn-primary" onclick="generateReport()">📄 GENERATE REPORT</button><button class="btn btn-secondary" onclick="printReport()">🖨 PRINT</button></div>
       </div>
       <div id="reportOutput"></div>
     </div>
 
-    <!-- ── CREW REGISTRY ── -->
+    <!-- CREW REGISTRY -->
     <div class="page" id="pageCrew">
-      <div class="page-title">CREW REGISTRY</div>
-      <div class="page-sub mono">PERSONNEL DATABASE</div>
+      <div class="page-title">CREW REGISTRY</div><div class="page-sub mono">PERSONNEL DATABASE</div>
       <div class="card">
         <div class="search-bar">
           <input type="text" id="crewSearch" placeholder="Search crew..." oninput="filterCrew()"/>
@@ -466,17 +349,26 @@ tr:hover td{background:rgba(34,197,94,.04)}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Svc No.</th><th>Rank</th><th>Name</th><th>Specialization</th><th>Status</th><th>Total Hrs</th><th>Total Missions</th><th>Actions</th></tr></thead>
-            <tbody id="crewTbl"></tbody>
-          </table>
-        </div>
+            <thead>
+              <tr>
+                <th>Svc No.</th>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Specialization</th>
+                <th>Status</th>
+                <th>Total Hrs</th>
+                <th>Total Missions</th>
+                <th>Actions</th></tr>
+              </thead>
+              <tbody id="crewTbl"></tbody>
+            </table>
+          </div>
       </div>
     </div>
 
-    <!-- ── AIRCRAFT REGISTRY ── -->
+    <!-- AIRCRAFT REGISTRY -->
     <div class="page" id="pageAircraft">
-      <div class="page-title">AIRCRAFT REGISTRY</div>
-      <div class="page-sub mono">FLEET MANAGEMENT SYSTEM</div>
+      <div class="page-title">AIRCRAFT REGISTRY</div><div class="page-sub mono">FLEET MANAGEMENT SYSTEM</div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <input type="text" id="acSearch" placeholder="Search aircraft..." oninput="filterAircraft()" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/>
@@ -484,94 +376,73 @@ tr:hover td{background:rgba(34,197,94,.04)}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Tail No.</th><th>Type</th><th>Status</th><th>Squadron</th><th>Total Hrs</th><th>Total Missions</th><th>Last Mission</th><th>Maint. Status</th><th>Actions</th></tr></thead>
-            <tbody id="aircraftTbl"></tbody>
-          </table>
-        </div>
+            <thead>
+            <tr><th>Tail No.</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Squadron</th>
+              <th>Total Hrs</th>
+              <th>Total Missions</th>
+              <th>Last Mission</th>
+              <th>Maint. Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="aircraftTbl"></tbody>
+        </table></div>
       </div>
     </div>
 
-    <!-- ── USER MANAGEMENT ── -->
+    <!-- USER MANAGEMENT -->
     <div class="page" id="pageUsers">
-      <div class="page-title">USER MANAGEMENT</div>
-      <div class="page-sub mono">ACCESS CONTROL & ROLE ASSIGNMENT</div>
+      <div class="page-title">USER MANAGEMENT</div><div class="page-sub mono">ACCESS CONTROL & ROLE ASSIGNMENT</div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <input type="text" id="userSearch" placeholder="Search users..." oninput="filterUsers()" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/>
           <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ CREATE USER</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Rank</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
-            <tbody id="usersTbl"></tbody>
-          </table>
-        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Rank</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="usersTbl"></tbody></table></div>
       </div>
     </div>
 
-    <!-- ── AUDIT LOGS ── -->
+    <!-- AUDIT LOGS -->
     <div class="page" id="pageAudit">
-      <div class="page-title">AUDIT LOGS</div>
-      <div class="page-sub mono">SYSTEM ACTIVITY TRAIL</div>
+      <div class="page-title">AUDIT LOGS</div><div class="page-sub mono">SYSTEM ACTIVITY TRAIL</div>
       <div class="card">
         <div class="search-bar">
           <input type="text" id="auditSearch" placeholder="Search logs..." oninput="filterAudit()"/>
-          <select id="auditAction" onchange="filterAudit()">
-            <option value="">All Actions</option>
-            <option>LOGIN</option><option>LOGOUT</option><option>MISSION_CREATE</option>
-            <option>MISSION_UPDATE</option><option>MISSION_DELETE</option><option>USER_CREATE</option>
-            <option>REPORT_GENERATE</option>
-          </select>
+          <select id="auditAction" onchange="filterAudit()"><option value="">All Actions</option><option>LOGIN</option><option>LOGOUT</option><option>MISSION_CREATE</option><option>MISSION_UPDATE</option><option>MISSION_DELETE</option><option>USER_CREATE</option><option>REPORT_GENERATE</option><option>MISSION_IMPORT</option></select>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
-            <tbody id="auditTbl"></tbody>
-          </table>
-        </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditTbl"></tbody></table></div>
         <div class="pagination" id="auditPagination"></div>
       </div>
     </div>
 
-    <!-- ── SETTINGS ── -->
+    <!-- SETTINGS -->
     <div class="page" id="pageSettings">
-      <div class="page-title">SYSTEM SETTINGS</div>
-      <div class="page-sub mono">CONFIGURATION & REFERENCE DATA</div>
+      <div class="page-title">SYSTEM SETTINGS</div><div class="page-sub mono">CONFIGURATION & REFERENCE DATA</div>
       <div class="form-grid-2">
         <div>
-          <div class="card">
-            <div class="card-title">Unit Information</div>
+          <div class="card"><div class="card-title">Unit Information</div>
             <div class="fg"><label>Unit Name</label><input type="text" id="sUnit" value="115 Special Operations Group"/></div>
             <div class="fg"><label>Commanding Officer</label><input type="text" id="sCO"/></div>
             <div class="fg"><label>Base Location</label><input type="text" id="sBase"/></div>
             <div class="fg"><label>Classification Level</label><select id="sClass"><option>RESTRICTED</option><option>CONFIDENTIAL</option><option>SECRET</option></select></div>
             <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 SAVE</button>
           </div>
-          <div class="card">
-            <div class="card-title">Mission Types</div>
+          <div class="card"><div class="card-title">Mission Types</div>
             <div id="missionTypeList" style="margin-bottom:12px"></div>
-            <div style="display:flex;gap:8px">
-              <input type="text" id="newMType" placeholder="Add mission type..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/>
-              <button class="btn btn-primary btn-sm" onclick="addRefItem('missionTypes','newMType','missionTypeList')">+</button>
-            </div>
+            <div style="display:flex;gap:8px"><input type="text" id="newMType" placeholder="Add mission type..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/><button class="btn btn-primary btn-sm" onclick="addRefItem('missionTypes','newMType','missionTypeList')">+</button></div>
           </div>
         </div>
         <div>
-          <div class="card">
-            <div class="card-title">Aircraft Types</div>
+          <div class="card"><div class="card-title">Aircraft Types</div>
             <div id="aircraftTypeList" style="margin-bottom:12px"></div>
-            <div style="display:flex;gap:8px">
-              <input type="text" id="newAcType" placeholder="Add aircraft type..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/>
-              <button class="btn btn-primary btn-sm" onclick="addRefItem('aircraftTypes','newAcType','aircraftTypeList')">+</button>
-            </div>
+            <div style="display:flex;gap:8px"><input type="text" id="newAcType" placeholder="Add aircraft type..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/><button class="btn btn-primary btn-sm" onclick="addRefItem('aircraftTypes','newAcType','aircraftTypeList')">+</button></div>
           </div>
-          <div class="card">
-            <div class="card-title">Ranks</div>
+          <div class="card"><div class="card-title">Ranks</div>
             <div id="rankList" style="margin-bottom:12px"></div>
-            <div style="display:flex;gap:8px">
-              <input type="text" id="newRank" placeholder="Add rank..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/>
-              <button class="btn btn-primary btn-sm" onclick="addRefItem('ranks','newRank','rankList')">+</button>
-            </div>
+            <div style="display:flex;gap:8px"><input type="text" id="newRank" placeholder="Add rank..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/><button class="btn btn-primary btn-sm" onclick="addRefItem('ranks','newRank','rankList')">+</button></div>
           </div>
         </div>
       </div>
@@ -580,115 +451,45 @@ tr:hover td{background:rgba(34,197,94,.04)}
   </main>
 </div>
 
-<!-- ══════════════ MODALS ══════════════ -->
-<!-- Mission Detail Modal -->
-<div class="modal-overlay" id="missionModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="mModalTitle">Mission Detail</h2>
-      <button class="modal-close" onclick="closeModal('missionModal')">✕</button>
-    </div>
-    <div class="modal-body" id="mModalBody"></div>
+<!-- MODALS -->
+<div class="modal-overlay" id="missionModal"><div class="modal"><div class="modal-header"><h2 id="mModalTitle">Mission Detail</h2><button class="modal-close" onclick="closeModal('missionModal')">✕</button></div><div class="modal-body" id="mModalBody"></div></div></div>
+<div class="modal-overlay" id="crewModal"><div class="modal"><div class="modal-header"><h2 id="crewModalTitle">Add Crew Member</h2><button class="modal-close" onclick="closeModal('crewModal')">✕</button></div>
+  <div class="modal-body"><div class="form-grid">
+    <div class="fg"><label>Service Number *</label><input type="text" id="cSvcNo"/></div>
+    <div class="fg"><label>Rank *</label><select id="cRank"><option value="">Select...</option></select></div>
+    <div class="fg"><label>Full Name *</label><input type="text" id="cName"/></div>
+    <div class="fg"><label>Specialization *</label><input type="text" id="cSpec" placeholder="e.g. Pilot, Navigator"/></div>
+    <div class="fg"><label>Unit</label><input type="text" id="cUnit"/></div>
+    <div class="fg"><label>Status</label><select id="cStatus"><option>Active</option><option>Inactive</option></select></div>
+    <div class="fg"><label>Date Joined</label><input type="date" id="cJoined"/></div>
+    <div class="fg"><label>Qualifications</label><input type="text" id="cQual" placeholder="e.g. QFI, IP"/></div>
   </div>
-</div>
+  <div class="btn-group"><button class="btn btn-primary" onclick="saveCrew()">💾 SAVE</button><button class="btn btn-secondary" onclick="closeModal('crewModal')">CANCEL</button></div></div></div></div>
+<div class="modal-overlay" id="acModal"><div class="modal"><div class="modal-header"><h2 id="acModalTitle">Add Aircraft</h2><button class="modal-close" onclick="closeModal('acModal')">✕</button></div>
+  <div class="modal-body"><div class="form-grid">
+    <div class="fg"><label>Tail Number *</label><input type="text" id="acTail"/></div>
+    <div class="fg"><label>Aircraft Type *</label><select id="acType"><option value="">Select...</option></select></div>
+    <div class="fg"><label>Status</label><select id="acStatus"><option>Active</option><option>Maintenance</option><option>Inactive</option></select></div>
+    <div class="fg"><label>Squadron</label><input type="text" id="acSqn"/></div>
+    <div class="fg"><label>Maintenance Status</label><select id="acMaint"><option>Serviceable</option><option>Unserviceable</option><option>Limited</option></select></div>
+    <div class="fg"><label>Next Inspection Date</label><input type="date" id="acInspect"/></div>
+  </div><div class="btn-group"><button class="btn btn-primary" onclick="saveAircraft()">💾 SAVE</button><button class="btn btn-secondary" onclick="closeModal('acModal')">CANCEL</button></div></div></div></div>
+<div class="modal-overlay" id="userModal"><div class="modal"><div class="modal-header"><h2 id="userModalTitle">Create User</h2><button class="modal-close" onclick="closeModal('userModal')">✕</button></div>
+  <div class="modal-body"><div class="form-grid">
+    <div class="fg"><label>Full Name *</label><input type="text" id="uName"/></div>
+    <div class="fg"><label>Email *</label><input type="email" id="uEmail"/></div>
+    <div class="fg"><label>Rank</label><select id="uRank"><option value="">Select...</option></select></div>
+    <div class="fg"><label>Role *</label><select id="uRole"><option value="viewer">Viewer</option><option value="analyst">Data Analyst</option><option value="command_admin">Command Administrator</option><option value="super_admin">Super Administrator</option></select></div>
+    <div class="fg"><label>Temporary Password *</label><input type="password" id="uPass"/></div>
+  </div><div class="btn-group"><button class="btn btn-primary" onclick="saveUser()">💾 CREATE USER</button><button class="btn btn-secondary" onclick="closeModal('userModal')">CANCEL</button></div></div></div></div>
 
-<!-- Crew Modal -->
-<div class="modal-overlay" id="crewModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="crewModalTitle">Add Crew Member</h2>
-      <button class="modal-close" onclick="closeModal('crewModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="fg"><label>Service Number *</label><input type="text" id="cSvcNo"/></div>
-        <div class="fg"><label>Rank *</label><select id="cRank"><option value="">Select...</option></select></div>
-        <div class="fg"><label>Full Name *</label><input type="text" id="cName"/></div>
-        <div class="fg"><label>Specialization *</label><input type="text" id="cSpec" placeholder="e.g. Pilot, Navigator"/></div>
-        <div class="fg"><label>Unit</label><input type="text" id="cUnit"/></div>
-        <div class="fg"><label>Status</label><select id="cStatus"><option>Active</option><option>Inactive</option></select></div>
-        <div class="fg"><label>Date Joined</label><input type="date" id="cJoined"/></div>
-        <div class="fg"><label>Qualifications</label><input type="text" id="cQual" placeholder="e.g. QFI, IP"/></div>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="saveCrew()">💾 SAVE</button>
-        <button class="btn btn-secondary" onclick="closeModal('crewModal')">CANCEL</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Aircraft Modal -->
-<div class="modal-overlay" id="acModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="acModalTitle">Add Aircraft</h2>
-      <button class="modal-close" onclick="closeModal('acModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="fg"><label>Tail Number *</label><input type="text" id="acTail"/></div>
-        <div class="fg"><label>Aircraft Type *</label><select id="acType"><option value="">Select...</option></select></div>
-        <div class="fg"><label>Status</label><select id="acStatus"><option>Active</option><option>Maintenance</option><option>Inactive</option></select></div>
-        <div class="fg"><label>Squadron</label><input type="text" id="acSqn"/></div>
-        <div class="fg"><label>Maintenance Status</label><select id="acMaint"><option>Serviceable</option><option>Unserviceable</option><option>Limited</option></select></div>
-        <div class="fg"><label>Next Inspection Date</label><input type="date" id="acInspect"/></div>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="saveAircraft()">💾 SAVE</button>
-        <button class="btn btn-secondary" onclick="closeModal('acModal')">CANCEL</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- User Modal -->
-<div class="modal-overlay" id="userModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="userModalTitle">Create User</h2>
-      <button class="modal-close" onclick="closeModal('userModal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="fg"><label>Full Name *</label><input type="text" id="uName"/></div>
-        <div class="fg"><label>Email *</label><input type="email" id="uEmail"/></div>
-        <div class="fg"><label>Rank</label><select id="uRank"><option value="">Select...</option></select></div>
-        <div class="fg"><label>Role *</label>
-          <select id="uRole">
-            <option value="viewer">Viewer</option>
-            <option value="analyst">Data Analyst</option>
-            <option value="command_admin">Command Administrator</option>
-            <option value="super_admin">Super Administrator</option>
-          </select>
-        </div>
-        <div class="fg"><label>Temporary Password *</label><input type="password" id="uPass"/></div>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-primary" onclick="saveUser()">💾 CREATE USER</button>
-        <button class="btn btn-secondary" onclick="closeModal('userModal')">CANCEL</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Notifications -->
 <div id="notif"></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner" style="width:40px;height:40px;border-width:3px"></div><p id="loadingMsg">LOADING...</p></div>
 
-<!-- Loading -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner" style="width:40px;height:40px;border-width:3px"></div>
-  <p id="loadingMsg">LOADING...</p>
-</div>
-
-<!-- ══════════════ FIREBASE + APP LOGIC ══════════════ -->
 <script type="module">
-// ─────────────────────────────────────────────────────
-// FIREBASE CONFIG — Replace with your project config
-// ─────────────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, createUserWithEmailAndPassword, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, orderBy, limit, where, onSnapshot, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
@@ -706,1188 +507,812 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// ─── GLOBALS ───
-let currentUser = null, currentRole = null, currentUserData = null;
-let allMissions = [], allCrew = [], allAircraft = [], allUsers = [], allAudit = [];
-let refData = { missionTypes:[], aircraftTypes:[], ranks:[] };
-let recPage = 1, recPageSize = 15, filteredRec = [];
-let auditPage = 1, auditPageSize = 20, filteredAudit = [];
-let editingMissionId = null, editingCrewId = null, editingAcId = null, editingUserId = null;
-let charts = {};
+// ── GLOBALS ──
+let currentUser=null, currentRole=null, currentUserData=null;
+let allMissions=[], allCrew=[], allAircraft=[], allUsers=[], allAudit=[];
+let refData={missionTypes:[],aircraftTypes:[],ranks:[]};
+let recPage=1, recPageSize=15, filteredRec=[];
+let auditPage=1, auditPageSize=20, filteredAudit=[];
+let editingMissionId=null, editingCrewId=null, editingAcId=null;
+let charts={};
 
-// expose globals for inline handlers
-window.togglePw = togglePw;
-window.showForgot = showForgot;
-window.doLogin = doLogin;
-window.toggleSidebar = toggleSidebar;
-window.navigate = navigate;
-window.addCrewRow = addCrewRow;
-window.saveMission = saveMission;
-window.clearMissionForm = clearMissionForm;
-window.calcFuel = calcFuel;
-window.filterRecords = filterRecords;
-window.exportCSV = exportCSV;
-window.exportExcel = exportExcel;
-window.viewMission = viewMission;
-window.editMission = editMission;
-window.deleteMission = deleteMission;
-window.loadAnalysis = loadAnalysis;
-window.generateReport = generateReport;
-window.printReport = printReport;
-window.filterCrew = filterCrew;
-window.openCrewModal = openCrewModal;
-window.saveCrew = saveCrew;
-window.editCrewMember = editCrewMember;
-window.deactivateCrew = deactivateCrew;
-window.filterAircraft = filterAircraft;
-window.openAcModal = openAcModal;
-window.saveAircraft = saveAircraft;
-window.editAircraft = editAircraft;
-window.filterUsers = filterUsers;
-window.openUserModal = openUserModal;
-window.saveUser = saveUser;
-window.disableUser = disableUser;
-window.filterAudit = filterAudit;
-window.saveSettings = saveSettings;
-window.addRefItem = addRefItem;
-window.closeModal = closeModal;
+// ── EXPOSE TO WINDOW ──
+Object.assign(window,{
+  togglePw,showForgot,doLogin,toggleSidebar,navigate,
+  addCrewRow,saveMission,clearMissionForm,filterRecords,exportCSV,exportExcel,
+  viewMission,editMission,deleteMission,loadAnalysis,generateReport,printReport,
+  filterCrew,openCrewModal,saveCrew,editCrewMember,deactivateCrew,
+  filterAircraft,openAcModal,saveAircraft,editAircraft,
+  filterUsers,openUserModal,saveUser,disableUser,filterAudit,
+  saveSettings,addRefItem,closeModal,
+  downloadTemplate,runImport,cancelImport,
+  validateHHMM,onCrewNameSelect,renderImportPreview
+});
 
-// ─── AUTH ───
-function togglePw(id, btn) {
-  const el = document.getElementById(id);
-  if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
-  else { el.type = 'password'; btn.textContent = '👁'; }
-}
+// ── BULK IMPORT CONSTANTS (defined FIRST before any function uses them) ──
+const MAX_CREW = 6;
 
-function showForgot() {
-  const email = document.getElementById('loginEmail').value;
-  if (!email) { notify('Enter your email first','warn'); return; }
-  sendPasswordResetEmail(auth, email)
-    .then(() => notify('Password reset email sent','success'))
-    .catch(e => notify(e.message,'error'));
-}
+const FIELD_MAP = [
+  {key:'date',               label:'Mission Date *',        required:true },
+  {key:'missionNumber',      label:'Mission Number',        required:false},
+  {key:'missionType',        label:'Mission Type *',        required:true },
+  {key:'operationName',      label:'Operation Name',        required:false},
+  {key:'areaOfOperation',    label:'Area of Operation',     required:false},
+  {key:'classification',     label:'Classification',        required:false},
+  {key:'priority',           label:'Priority',              required:false},
+  {key:'aircraftType',       label:'Aircraft Type',         required:false},
+  {key:'tailNumber',         label:'Tail Number',           required:false},
+  {key:'fuelUplift',         label:'Fuel Uplift (L)',        required:false},
+  {key:'fuelRemaining',      label:'Fuel Remaining (L)',     required:false},
+  {key:'fuelConsumed',       label:'Fuel Consumed (L)',      required:false},
+  {key:'sorties',            label:'Sorties *',             required:true },
+  {key:'flightHoursDisplay', label:'Flight Hours (H:MM) *', required:true },
+  {key:'takeoffTime',        label:'Takeoff Time',          required:false},
+  {key:'landingTime',        label:'Landing Time',          required:false},
+  {key:'blockTime',          label:'Block Time (hrs)',       required:false},
+  {key:'outcome',            label:'Outcome',               required:false},
+  {key:'remarks',            label:'Remarks',               required:false},
+];
 
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const remember = document.getElementById('rememberMe').checked;
-  const errEl = document.getElementById('loginErr');
-  errEl.style.display = 'none';
-  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
+const CREW_FIELD_MAP = Array.from({length:MAX_CREW},(_,i)=>[
+  {key:`crew${i+1}_role`,label:`Crew${i+1} Role`      },
+  {key:`crew${i+1}_name`,label:`Crew${i+1} Name`      },
+  {key:`crew${i+1}_rank`,label:`Crew${i+1} Rank`      },
+  {key:`crew${i+1}_svc`, label:`Crew${i+1} Svc No`    },
+  {key:`crew${i+1}_hrs`, label:`Crew${i+1} Hrs (H:MM)`},
+]).flat();
+
+const ALL_FIELD_MAP = [...FIELD_MAP, ...CREW_FIELD_MAP];
+
+let importRows=[], importHeaders=[];
+
+// ── AUTH ──
+function togglePw(id,btn){const el=document.getElementById(id);if(el.type==='password'){el.type='text';btn.textContent='🙈';}else{el.type='password';btn.textContent='👁';}}
+function showForgot(){const e=document.getElementById('loginEmail').value;if(!e){notify('Enter your email first','warn');return;}sendPasswordResetEmail(auth,e).then(()=>notify('Reset email sent','success')).catch(e=>notify(e.message,'error'));}
+
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const remember=document.getElementById('rememberMe').checked;
+  const errEl=document.getElementById('loginErr');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Email and password required.';errEl.style.display='block';return;}
   showLoading('AUTHENTICATING...');
-  try {
-    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e) {
-    hideLoading();
-    errEl.textContent = 'Authentication failed: ' + e.message;
-    errEl.style.display = 'block';
-  }
+  try{
+    await setPersistence(auth,remember?browserLocalPersistence:browserSessionPersistence);
+    await signInWithEmailAndPassword(auth,email,pass);
+  }catch(e){hideLoading();errEl.textContent='Authentication failed: '+e.message;errEl.style.display='block';}
 }
 
-onAuthStateChanged(auth, async user => {
-  if (user) {
+onAuthStateChanged(auth,async user=>{
+  if(user){
     showLoading('LOADING SYSTEM...');
-    currentUser = user;
-    const uDoc = await getDoc(doc(db,'users',user.uid));
-    if (uDoc.exists()) {
-      currentUserData = uDoc.data();
-      currentRole = currentUserData.role || 'viewer';
-    } else {
-      // First-time super admin bootstrap
-      currentRole = 'super_admin';
-      currentUserData = { name: user.email, role: 'super_admin', rank: '', status: 'Active' };
-      await setDoc(doc(db,'users',user.uid), { ...currentUserData, email: user.email, createdAt: serverTimestamp() });
+    currentUser=user;
+    const uDoc=await getDoc(doc(db,'users',user.uid));
+    if(uDoc.exists()){currentUserData=uDoc.data();currentRole=currentUserData.role||'viewer';}
+    else{
+      currentRole='super_admin';
+      currentUserData={name:user.email,role:'super_admin',rank:'',status:'Active'};
+      await setDoc(doc(db,'users',user.uid),{...currentUserData,email:user.email,createdAt:serverTimestamp()});
     }
-    await logAudit('LOGIN', 'User logged in');
-    document.getElementById('tbName').textContent = currentUserData.name || user.email;
-    document.getElementById('tbRole').textContent = roleLabel(currentRole);
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('appShell').style.display = 'flex';
+    await logAudit('LOGIN','User logged in');
+    document.getElementById('tbName').textContent=currentUserData.name||user.email;
+    document.getElementById('tbRole').textContent=roleLabel(currentRole);
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('appShell').style.display='flex';
     buildNav();
     await loadRefData();
     await loadAllData();
     navigate('dashboard');
     hideLoading();
-  } else {
-    document.getElementById('loginPage').style.display = 'flex';
-    document.getElementById('appShell').style.display = 'none';
-    currentUser = null; currentRole = null;
+  }else{
+    document.getElementById('loginPage').style.display='flex';
+    document.getElementById('appShell').style.display='none';
+    currentUser=null;currentRole=null;
   }
 });
 
-function roleLabel(r) {
-  return { super_admin:'Super Administrator', command_admin:'Command Administrator', analyst:'Data Analyst', viewer:'Viewer' }[r] || r;
-}
+function roleLabel(r){return{super_admin:'Super Administrator',command_admin:'Command Administrator',analyst:'Data Analyst',viewer:'Viewer'}[r]||r;}
 
-// ─── CLOCK ───
-function startClock() {
-  const update = () => {
-    const now = new Date();
-    document.getElementById('clockEl').textContent = now.toTimeString().slice(0,8);
-    document.getElementById('dateEl').textContent = now.toDateString().toUpperCase();
-  };
-  update(); setInterval(update, 1000);
-}
-startClock();
+// ── CLOCK ──
+(function startClock(){const u=()=>{const n=new Date();document.getElementById('clockEl').textContent=n.toTimeString().slice(0,8);document.getElementById('dateEl').textContent=n.toDateString().toUpperCase();};u();setInterval(u,1000);})();
 
-// ─── SIDEBAR ───
-let sidebarOpen = true;
-function toggleSidebar() {
-  sidebarOpen = !sidebarOpen;
-  document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
-  document.getElementById('topbar').classList.toggle('collapsed', !sidebarOpen);
-  document.getElementById('mainContent').classList.toggle('collapsed', !sidebarOpen);
-}
+// ── SIDEBAR ──
+let sidebarOpen=true;
+function toggleSidebar(){sidebarOpen=!sidebarOpen;document.getElementById('sidebar').classList.toggle('collapsed',!sidebarOpen);document.getElementById('topbar').classList.toggle('collapsed',!sidebarOpen);document.getElementById('mainContent').classList.toggle('collapsed',!sidebarOpen);}
 
-const navItems = [
-  { id:'dashboard', label:'Dashboard', icon:'📊', roles:['super_admin','command_admin','analyst','viewer'] },
-  { id:'missionEntry', label:'Mission Data Entry', icon:'✍', roles:['super_admin','command_admin','analyst'] },
-  { id:'missionRecords', label:'Mission Records', icon:'📋', roles:['super_admin','command_admin','analyst','viewer'] },
-  { id:'analysis', label:'Analysis & Statistics', icon:'📈', roles:['super_admin','command_admin','analyst'] },
-  { id:'reports', label:'Monthly Reports', icon:'📄', roles:['super_admin','command_admin','analyst'] },
-  { id:'crew', label:'Crew Registry', icon:'👨‍✈️', roles:['super_admin','command_admin','analyst'] },
-  { id:'aircraft', label:'Aircraft Registry', icon:'✈', roles:['super_admin','command_admin','analyst'] },
-  { id:'users', label:'User Management', icon:'👤', roles:['super_admin'] },
-  { id:'audit', label:'Audit Logs', icon:'📝', roles:['super_admin','command_admin'] },
-  { id:'settings', label:'Settings', icon:'⚙', roles:['super_admin'] },
+const navItems=[
+  {id:'dashboard',label:'Dashboard',icon:'📊',roles:['super_admin','command_admin','analyst','viewer']},
+  {id:'missionEntry',label:'Mission Data Entry',icon:'✍',roles:['super_admin','command_admin','analyst']},
+  {id:'missionRecords',label:'Mission Records',icon:'📋',roles:['super_admin','command_admin','analyst','viewer']},
+  {id:'analysis',label:'Analysis & Statistics',icon:'📈',roles:['super_admin','command_admin','analyst']},
+  {id:'reports',label:'Monthly Reports',icon:'📄',roles:['super_admin','command_admin','analyst']},
+  {id:'crew',label:'Crew Registry',icon:'👨‍✈️',roles:['super_admin','command_admin','analyst']},
+  {id:'aircraft',label:'Aircraft Registry',icon:'✈',roles:['super_admin','command_admin','analyst']},
+  {id:'users',label:'User Management',icon:'👤',roles:['super_admin']},
+  {id:'audit',label:'Audit Logs',icon:'📝',roles:['super_admin','command_admin']},
+  {id:'settings',label:'Settings',icon:'⚙',roles:['super_admin']},
 ];
 
-function buildNav() {
-  const nav = document.getElementById('navMenu');
-  nav.innerHTML = '';
-  navItems.filter(n => n.roles.includes(currentRole)).forEach(n => {
-    const div = document.createElement('div');
-    div.className = 'nav-item';
-    div.dataset.id = n.id;
-    div.innerHTML = `<span class="ni">${n.icon}</span><span>${n.label}</span>`;
-    div.onclick = () => navigate(n.id);
-    nav.appendChild(div);
+function buildNav(){
+  const nav=document.getElementById('navMenu');nav.innerHTML='';
+  navItems.filter(n=>n.roles.includes(currentRole)).forEach(n=>{
+    const d=document.createElement('div');d.className='nav-item';d.dataset.id=n.id;
+    d.innerHTML=`<span class="ni">${n.icon}</span><span>${n.label}</span>`;
+    d.onclick=()=>navigate(n.id);nav.appendChild(d);
   });
-  // Logout
-  const lo = document.createElement('div');
-  lo.className = 'nav-item';
-  lo.innerHTML = `<span class="ni">🚪</span><span>Logout</span>`;
-  lo.onclick = doLogout;
-  nav.appendChild(lo);
+  const lo=document.createElement('div');lo.className='nav-item';lo.innerHTML=`<span class="ni">🚪</span><span>Logout</span>`;lo.onclick=doLogout;nav.appendChild(lo);
 }
 
-async function doLogout() {
-  await logAudit('LOGOUT','User logged out');
-  await signOut(auth);
+async function doLogout(){await logAudit('LOGOUT','User logged out');await signOut(auth);}
+
+function navigate(id){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg={dashboard:'pageDashboard',missionEntry:'pageMissionEntry',missionRecords:'pageMissionRecords',analysis:'pageAnalysis',reports:'pageReports',crew:'pageCrew',aircraft:'pageAircraft',users:'pageUsers',audit:'pageAudit',settings:'pageSettings'}[id];
+  if(pg)document.getElementById(pg).classList.add('active');
+  if(id==='dashboard')renderDashboard();
+  if(id==='missionEntry')initMissionForm();
+  if(id==='missionRecords')renderRecords();
+  if(id==='analysis')loadAnalysis();
+  if(id==='crew')renderCrew();
+  if(id==='aircraft')renderAircraft();
+  if(id==='users')renderUsers();
+  if(id==='audit')renderAudit();
+  if(id==='settings')renderSettings();
 }
 
-function navigate(id) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.id === id));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pg = { dashboard:'pageDashboard', missionEntry:'pageMissionEntry', missionRecords:'pageMissionRecords',
-    analysis:'pageAnalysis', reports:'pageReports', crew:'pageCrew', aircraft:'pageAircraft',
-    users:'pageUsers', audit:'pageAudit', settings:'pageSettings' }[id];
-  if (pg) document.getElementById(pg).classList.add('active');
-  if (id === 'dashboard') renderDashboard();
-  if (id === 'missionEntry') initMissionForm();
-  if (id === 'missionRecords') renderRecords();
-  if (id === 'analysis') loadAnalysis();
-  if (id === 'crew') renderCrew();
-  if (id === 'aircraft') renderAircraft();
-  if (id === 'users') renderUsers();
-  if (id === 'audit') renderAudit();
-  if (id === 'settings') renderSettings();
-}
-
-// ─── REFERENCE DATA ───
-async function loadRefData() {
-  const snap = await getDoc(doc(db,'reference_data','main'));
-  if (snap.exists()) {
-    refData = { missionTypes:[], aircraftTypes:[], ranks:[], ...snap.data() };
-  } else {
-    refData = {
-      missionTypes:['Combat Air Patrol','Close Air Support','Intelligence Surveillance Reconnaissance','Search & Rescue','Logistics','Training','Humanitarian','Special Operations'],
-      aircraftTypes:['Alpha Jet','F-7Ni','Super Puma','Mi-35','C-130 Hercules','King Air','Agusta 109'],
-      ranks:['Cadet','Pilot Officer','Flying Officer','Flight Lieutenant','Squadron Leader','Wing Commander','Group Captain','Air Commodore','Air Vice Marshal','Air Marshal','Air Chief Marshal']
-    };
-    await setDoc(doc(db,'reference_data','main'), refData);
+// ── REFERENCE DATA ──
+async function loadRefData(){
+  const snap=await getDoc(doc(db,'reference_data','main'));
+  if(snap.exists()){refData={missionTypes:[],aircraftTypes:[],ranks:[],...snap.data()};}
+  else{
+    refData={missionTypes:['Combat Air Patrol','Close Air Support','ISR','Search & Rescue','Logistics','Training','Humanitarian','Special Operations'],aircraftTypes:['Alpha Jet','F-7Ni','Super Puma','Mi-35','C-130 Hercules','King Air','Agusta 109'],ranks:['Cadet','Pilot Officer','Flying Officer','Flight Lieutenant','Squadron Leader','Wing Commander','Group Captain','Air Commodore','Air Vice Marshal','Air Marshal','Air Chief Marshal']};
+    await setDoc(doc(db,'reference_data','main'),refData);
   }
 }
+async function saveRefData(){await setDoc(doc(db,'reference_data','main'),refData);}
 
-async function saveRefData() {
-  await setDoc(doc(db,'reference_data','main'), refData);
-}
-
-// ─── LOAD ALL DATA ───
-async function loadAllData() {
-  const [ms, cs, as, us, aus] = await Promise.all([
-    getDocs(query(collection(db,'missions'), orderBy('createdAt','desc'))),
-    getDocs(collection(db,'crew')),
-    getDocs(collection(db,'aircraft')),
-    getDocs(collection(db,'users')),
-    getDocs(query(collection(db,'audit_logs'), orderBy('timestamp','desc'), limit(200)))
+// ── LOAD ALL DATA ──
+async function loadAllData(){
+  const [ms,cs,as,us,aus]=await Promise.all([
+    getDocs(query(collection(db,'missions'),orderBy('createdAt','desc'))),
+    getDocs(collection(db,'crew')),getDocs(collection(db,'aircraft')),
+    getDocs(collection(db,'users')),getDocs(query(collection(db,'audit_logs'),orderBy('timestamp','desc'),limit(200)))
   ]);
-  allMissions = ms.docs.map(d => ({id:d.id,...d.data()}));
-  allCrew = cs.docs.map(d => ({id:d.id,...d.data()}));
-  allAircraft = as.docs.map(d => ({id:d.id,...d.data()}));
-  allUsers = us.docs.map(d => ({id:d.id,...d.data()}));
-  allAudit = aus.docs.map(d => ({id:d.id,...d.data()}));
+  allMissions=ms.docs.map(d=>({id:d.id,...d.data()}));
+  allCrew=cs.docs.map(d=>({id:d.id,...d.data()}));
+  allAircraft=as.docs.map(d=>({id:d.id,...d.data()}));
+  allUsers=us.docs.map(d=>({id:d.id,...d.data()}));
+  allAudit=aus.docs.map(d=>({id:d.id,...d.data()}));
 }
 
-// ─── DASHBOARD ───
-function renderDashboard() {
-  const now = new Date();
-  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const monthMissions = allMissions.filter(m => (m.date||'').startsWith(ym));
-  const totalSorties = allMissions.reduce((s,m) => s+(+m.sorties||0), 0);
-  const totalHours = allMissions.reduce((s,m) => s+(+m.flightHours||0), 0);
-  const totalFuel = monthMissions.reduce((s,m) => s+(+m.fuelConsumed||0), 0);
-  const activeCrew = allCrew.filter(c => c.status === 'Active').length;
-  const activeAc = allAircraft.filter(a => a.status === 'Active').length;
-  // top mission type
-  const typeCount = {};
-  allMissions.forEach(m => { if(m.missionType) typeCount[m.missionType] = (typeCount[m.missionType]||0)+1; });
-  const topType = Object.entries(typeCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+// ── H:MM HELPERS ──
+function hmmToDecimal(str){if(!str||!str.includes(':'))return parseFloat(str)||0;const[h,m]=str.split(':');return(parseInt(h)||0)+(parseInt(m)||0)/60;}
+function decimalToHmm(dec){if(!dec&&dec!==0)return'—';const h=Math.floor(dec),m=Math.round((dec-h)*60);return`${h}:${String(m).padStart(2,'0')}`;}
+function validateHHMM(input){let v=input.value.replace(/[^0-9:]/g,'');if(!v.includes(':')&&v.length>=2){const hp=v.length>2?v.slice(0,v.length-2):v.slice(0,1),mp=v.length>2?v.slice(v.length-2):v.slice(1);v=hp+':'+mp;}if(v.includes(':')){let[h,m]=v.split(':');if(m&&+m>59)m='59';v=h+':'+(m||'');}input.value=v;}
 
-  document.getElementById('kpiMissions').textContent = allMissions.length;
-  document.getElementById('kpiSorties').textContent = totalSorties;
-  document.getElementById('kpiHours').textContent = decimalToHmm(totalHours);
-  document.getElementById('kpiAircraft').textContent = activeAc;
-  document.getElementById('kpiMonth').textContent = monthMissions.length;
-  document.getElementById('kpiFuel').textContent = totalFuel.toLocaleString();
-  document.getElementById('kpiCrew').textContent = activeCrew;
-  document.getElementById('kpiTopType').textContent = topType;
+function normaliseDate(raw){
+  if(!raw&&raw!==0)return'';
+  // Excel serial number (e.g. 45657 = 2025-01-01)
+  if(typeof raw==='number'){
+    const d=new Date(Math.round((raw-25569)*86400*1000));
+    const y=d.getUTCFullYear(),mo=d.getUTCMonth()+1,day=d.getUTCDate();
+    return`${y}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  }
+  // Already a proper string like "2026-01-01"
+  if(typeof raw==='string'){
+    const s=raw.trim();
+    // Already YYYY-MM-DD
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+    // DD/MM/YYYY or DD-MM-YYYY
+    const parts=s.split(/[\/\-\.]/);
+    if(parts.length===3){
+      if(parts[2].length===4)return`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+      if(parts[0].length===4)return`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+    }
+    return s;
+  }
+  return String(raw).trim();
+}
 
-  // Recent missions table
-  const tbl = document.getElementById('recentMissionsTbl');
-  const recent = allMissions.slice(0,10);
-  tbl.innerHTML = recent.length ? recent.map(m => `
-    <tr>
-      <td class="mono">${m.missionNumber||'—'}</td>
-      <td>${m.date||'—'}</td>
-      <td><span class="badge badge-info">${m.missionType||'—'}</span></td>
-      <td>${m.operationName||'—'}</td>
-      <td>${m.tailNumber||'—'}</td>
-      <td>${m.sorties||0}</td>
-      <td>${m.flightHoursDisplay || decimalToHmm(m.flightHours)}</td>
-      <td>${outcomeBadge(m.outcome)}</td>
-    </tr>`).join('') : `<tr><td colspan="8" class="empty-state">No mission data</td></tr>`;
+function normaliseHMM(raw){
+  if(!raw&&raw!==0)return'0:00';
+  // Decimal fraction from Excel time cell e.g. 0.072916 = 1:45
+  if(typeof raw==='number'){
+    if(raw<1){// pure time fraction
+      const totalMins=Math.round(raw*24*60);
+      return`${Math.floor(totalMins/60)}:${String(totalMins%60).padStart(2,'0')}`;
+    }
+    // Might be a datetime serial — extract time portion
+    const timePart=raw-Math.floor(raw);
+    const totalMins=Math.round(timePart*24*60);
+    return`${Math.floor(totalMins/60)}:${String(totalMins%60).padStart(2,'0')}`;
+  }
+  const s=String(raw).trim();
+  // Already H:MM or HH:MM
+  if(/^\d{1,3}:\d{2}$/.test(s))return s;
+  // Full datetime string fallback
+  if(s.includes('1899')||s.includes('GMT')){const t=s.match(/(\d{1,2}):(\d{2})/);return t?`${parseInt(t[1])}:${t[2]}`:'0:00';}
+  return s||'0:00';
+}
 
+// ── DASHBOARD ──
+function renderDashboard(){
+  const now=new Date(),ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mm=allMissions.filter(m=>(m.date||'').startsWith(ym));
+  const totalSorties=allMissions.reduce((s,m)=>s+(+m.sorties||0),0);
+  const totalHours=allMissions.reduce((s,m)=>s+(+m.flightHours||0),0);
+  const totalFuel=mm.reduce((s,m)=>s+(+m.fuelConsumed||0),0);
+  const activeCrew=allCrew.filter(c=>c.status==='Active').length;
+  const activeAc=allAircraft.filter(a=>a.status==='Active').length;
+  const typeCount={};allMissions.forEach(m=>{if(m.missionType)typeCount[m.missionType]=(typeCount[m.missionType]||0)+1;});
+  const topType=Object.entries(typeCount).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—';
+  document.getElementById('kpiMissions').textContent=allMissions.length;
+  document.getElementById('kpiSorties').textContent=totalSorties;
+  document.getElementById('kpiHours').textContent=decimalToHmm(totalHours);
+  document.getElementById('kpiAircraft').textContent=activeAc;
+  document.getElementById('kpiMonth').textContent=mm.length;
+  document.getElementById('kpiFuel').textContent=totalFuel.toLocaleString();
+  document.getElementById('kpiCrew').textContent=activeCrew;
+  document.getElementById('kpiTopType').textContent=topType;
+  const tbl=document.getElementById('recentMissionsTbl');
+  const recent=allMissions.slice(0,10);
+  tbl.innerHTML=recent.length?recent.map(m=>`<tr><td class="mono">${m.missionNumber||'—'}</td><td>${m.date||'—'}</td><td><span class="badge badge-info">${m.missionType||'—'}</span></td><td>${m.operationName||'—'}</td><td>${m.tailNumber||'—'}</td><td>${m.sorties||0}</td><td>${m.flightHoursDisplay||decimalToHmm(m.flightHours)}</td><td>${outcomeBadge(m.outcome)}</td></tr>`).join(''):`<tr><td colspan="8" class="empty-state">No mission data</td></tr>`;
   buildDashboardCharts();
 }
 
-function buildDashboardCharts() {
-  const months = getLast6Months();
-  const colors = ['#22C55E','#38bdf8','#F59E0B','#EF4444','#a855f7','#f97316'];
+function getLast6Months(){const months=[],d=new Date();for(let i=5;i>=0;i--){const t=new Date(d.getFullYear(),d.getMonth()-i,1);months.push(`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`);}return months;}
+function getLast8Weeks(){const weeks=[],d=new Date();for(let i=7;i>=0;i--){const s=new Date(d),e=new Date(d);s.setDate(d.getDate()-i*7-6);e.setDate(d.getDate()-i*7);weeks.push({start:s,end:e});}return weeks;}
+function isInWeek(ds,w){if(!ds)return false;const d=new Date(ds);return d>=w.start&&d<=w.end;}
 
-  // Sorties by month by type
-  const types = refData.missionTypes.slice(0,4);
-  const sortieData = types.map(t => months.map(m => allMissions.filter(x => x.missionType===t && (x.date||'').startsWith(m)).reduce((s,x)=>s+(+x.sorties||0),0)));
+function buildDashboardCharts(){
+  const months=getLast6Months(),colors=['#22C55E','#38bdf8','#F59E0B','#EF4444','#a855f7','#f97316'];
+  const types=refData.missionTypes.slice(0,4);
+  const sortieData=types.map(t=>months.map(m=>allMissions.filter(x=>x.missionType===t&&(x.date||'').startsWith(m)).reduce((s,x)=>s+(+x.sorties||0),0)));
   makeChart('chartSorties','bar',months.map(m=>m.slice(5)),types.map((t,i)=>({label:t.split(' ')[0],data:sortieData[i],backgroundColor:colors[i]+'99',borderColor:colors[i],borderWidth:1})));
-
-  // Flight hours trend
-  const hrData = months.map(m => allMissions.filter(x=>(x.date||'').startsWith(m)).reduce((s,x)=>s+(+x.flightHours||0),0));
+  const hrData=months.map(m=>allMissions.filter(x=>(x.date||'').startsWith(m)).reduce((s,x)=>s+(+x.flightHours||0),0));
   makeChart('chartHours','line',months.map(m=>m.slice(5)),[{label:'Flight Hours',data:hrData,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.15)',fill:true,tension:.4}]);
-
-  // Mission type distribution
-  const typeEntries = Object.entries(allMissions.reduce((a,m)=>{if(m.missionType)a[m.missionType]=(a[m.missionType]||0)+1;return a},{}));
-  makeChart('chartTypes','doughnut',typeEntries.map(e=>e[0]),[{data:typeEntries.map(e=>e[1]),backgroundColor:colors}]);
-
-  // Aircraft utilization
-  const acHrs = allAircraft.slice(0,6).map(a => ({ label:a.tailNumber, hrs: allMissions.filter(m=>m.tailNumber===a.tailNumber).reduce((s,m)=>s+(+m.flightHours||0),0) }));
+  const te=Object.entries(allMissions.reduce((a,m)=>{if(m.missionType)a[m.missionType]=(a[m.missionType]||0)+1;return a},{}));
+  makeChart('chartTypes','doughnut',te.map(e=>e[0]),[{data:te.map(e=>e[1]),backgroundColor:colors}]);
+  const acHrs=allAircraft.slice(0,6).map(a=>({label:a.tailNumber,hrs:allMissions.filter(m=>m.tailNumber===a.tailNumber).reduce((s,m)=>s+(+m.flightHours||0),0)}));
   makeChart('chartAcUtil','bar',acHrs.map(a=>a.label),[{label:'Flight Hours',data:acHrs.map(a=>a.hrs),backgroundColor:'#22C55E99',borderColor:'#22C55E',borderWidth:1}]);
-
-  // Fuel trend
-  const fuelData = months.map(m => allMissions.filter(x=>(x.date||'').startsWith(m)).reduce((s,x)=>s+(+x.fuelConsumed||0),0));
+  const fuelData=months.map(m=>allMissions.filter(x=>(x.date||'').startsWith(m)).reduce((s,x)=>s+(+x.fuelConsumed||0),0));
   makeChart('chartFuel','line',months.map(m=>m.slice(5)),[{label:'Fuel (L)',data:fuelData,borderColor:'#F59E0B',backgroundColor:'rgba(245,158,11,.15)',fill:true,tension:.4}]);
-
-  // Operational tempo (weekly last 8 weeks)
-  const weeks = getLast8Weeks();
-  const tempoData = weeks.map(w => allMissions.filter(m => isInWeek(m.date, w)).length);
-  makeChart('chartTempo','bar',weeks.map((_,i)=>`W${weeks.length-i}`),[{label:'Missions',data:tempoData,backgroundColor:'#a855f799',borderColor:'#a855f7',borderWidth:1}]);
+  const weeks=getLast8Weeks();
+  makeChart('chartTempo','bar',weeks.map((_,i)=>`W${weeks.length-i}`),[{label:'Missions',data:weeks.map(w=>allMissions.filter(m=>isInWeek(m.date,w)).length),backgroundColor:'#a855f799',borderColor:'#a855f7',borderWidth:1}]);
 }
 
-function getLast6Months() {
-  const months = [];
-  const d = new Date();
-  for (let i=5; i>=0; i--) {
-    const t = new Date(d.getFullYear(), d.getMonth()-i, 1);
-    months.push(`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`);
-  }
-  return months;
+function makeChart(id,type,labels,datasets){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id)?.getContext('2d');if(!ctx)return;
+  charts[id]=new Chart(ctx,{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Rajdhani',size:11},boxWidth:12}}},scales:type==='doughnut'?{}:{x:{ticks:{color:'#64748b',font:{family:'Share Tech Mono',size:10}},grid:{color:'#1e2d45'}},y:{ticks:{color:'#64748b',font:{family:'Share Tech Mono',size:10}},grid:{color:'#1e2d45'}}}}});
 }
 
-function getLast8Weeks() {
-  const weeks = [];
-  const d = new Date();
-  for (let i=7; i>=0; i--) {
-    const start = new Date(d); start.setDate(d.getDate() - i*7 - 6);
-    const end = new Date(d); end.setDate(d.getDate() - i*7);
-    weeks.push({ start, end });
-  }
-  return weeks;
+// ── MISSION FORM ──
+function initMissionForm(){
+  if(!editingMissionId)clearMissionForm();
+  populateSelect('mType',refData.missionTypes);
+  populateSelect('mAcType',refData.aircraftTypes);
+  const tailSel=document.getElementById('mTail');
+  tailSel.innerHTML='<option value="">Select...</option>'+allAircraft.map(a=>`<option value="${a.tailNumber}">${a.tailNumber} (${a.aircraftType||''})</option>`).join('');
+  if(!document.getElementById('mDate').value)document.getElementById('mDate').value=new Date().toISOString().slice(0,10);
+  if(!document.getElementById('mNumber').value)document.getElementById('mNumber').value=genMissionNumber();
+  if(!document.getElementById('crewRows').children.length)addCrewRow();
 }
 
-function isInWeek(dateStr, week) {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  return d >= week.start && d <= week.end;
-}
+function genMissionNumber(){const d=new Date();return`NAF115/${d.getFullYear()}/${String(allMissions.length+1).padStart(4,'0')}`;}
 
-function makeChart(id, type, labels, datasets) {
-  if (charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id)?.getContext('2d');
-  if (!ctx) return;
-  charts[id] = new Chart(ctx, {
-    type,
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#94a3b8', font: { family:'Rajdhani', size:11 }, boxWidth:12 } } },
-      scales: type==='doughnut' ? {} : {
-        x: { ticks:{color:'#64748b',font:{family:'Share Tech Mono',size:10}}, grid:{color:'#1e2d45'} },
-        y: { ticks:{color:'#64748b',font:{family:'Share Tech Mono',size:10}}, grid:{color:'#1e2d45'} }
-      }
-    }
-  });
-}
+function populateSelect(id,items){const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Select...</option>'+items.map(i=>`<option value="${i}">${i}</option>`).join('');if(cur)sel.value=cur;}
 
-// ─── MISSION FORM ───
-function initMissionForm() {
-  if (!editingMissionId) clearMissionForm();
-  populateSelect('mType', refData.missionTypes);
-  populateSelect('mAcType', refData.aircraftTypes);
-  // Populate tail numbers from aircraft
-  const tailSel = document.getElementById('mTail');
-  tailSel.innerHTML = '<option value="">Select...</option>' + allAircraft.map(a=>`<option value="${a.tailNumber}">${a.tailNumber} (${a.aircraftType||''})</option>`).join('');
-  if (!document.getElementById('mDate').value) document.getElementById('mDate').value = new Date().toISOString().slice(0,10);
-  if (!document.getElementById('mNumber').value) document.getElementById('mNumber').value = genMissionNumber();
-  if (!document.getElementById('crewRows').children.length) addCrewRow();
-}
-
-function genMissionNumber() {
-  const d = new Date();
-  return `NAF115/${d.getFullYear()}/${String(allMissions.length+1).padStart(4,'0')}`;
-}
-
-function populateSelect(id, items) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Select...</option>' + items.map(i=>`<option value="${i}">${i}</option>`).join('');
-  if (cur) sel.value = cur;
-}
-
-function calcFuel() {} // Fuel consumed is now entered manually
-
-window.validateHHMM = function(input) {
-  // Allow digits and colon only
-  let v = input.value.replace(/[^0-9:]/g,'');
-  // Auto-insert colon after 1-3 digits if user didn't type one
-  if (!v.includes(':') && v.length >= 2) {
-    // insert colon before last 2 chars if length >= 3, else after first char
-    const hPart = v.length > 2 ? v.slice(0, v.length - 2) : v.slice(0,1);
-    const mPart = v.length > 2 ? v.slice(v.length - 2) : v.slice(1);
-    v = hPart + ':' + mPart;
-  }
-  // Clamp minutes to 59
-  if (v.includes(':')) {
-    let [h, m] = v.split(':');
-    if (m && +m > 59) m = '59';
-    v = h + ':' + (m||'');
-  }
-  input.value = v;
-};
-
-// Convert H:MM string to decimal hours for storage
-function hmmToDecimal(str) {
-  if (!str || !str.includes(':')) return parseFloat(str) || 0;
-  const [h, m] = str.split(':');
-  return (parseInt(h)||0) + (parseInt(m)||0)/60;
-}
-
-// Convert decimal hours back to H:MM for display
-function decimalToHmm(dec) {
-  if (!dec && dec !== 0) return '—';
-  const h = Math.floor(dec);
-  const m = Math.round((dec - h) * 60);
-  return `${h}:${String(m).padStart(2,'0')}`;
-}
-
-function addCrewRow(prefill) {
-  const container = document.getElementById('crewRows');
-  const div = document.createElement('div');
-  div.className = 'crew-row';
-  // Build crew name options from allCrew register
-  const crewOptions = allCrew
-    .filter(c => c.status === 'Active')
-    .map(c => `<option value="${c.id}" data-rank="${c.rank||''}" data-svc="${c.serviceNumber||''}" data-name="${c.name||''}">${c.rank ? c.rank+' ' : ''}${c.name}</option>`)
-    .join('');
-  div.innerHTML = `
+function addCrewRow(prefill){
+  const container=document.getElementById('crewRows');
+  const div=document.createElement('div');div.className='crew-row';
+  const crewOptions=allCrew.filter(c=>c.status==='Active').map(c=>`<option value="${c.id}" data-rank="${c.rank||''}" data-svc="${c.serviceNumber||''}" data-name="${c.name||''}">${c.rank?c.rank+' ':''}${c.name}</option>`).join('');
+  div.innerHTML=`
     <div class="fg" style="margin:0"><label style="font-size:10px">ROLE</label><input type="text" class="cr-role" placeholder="e.g. Pilot" value="${prefill?.role||''}"/></div>
     <div class="fg" style="margin:0"><label style="font-size:10px">SVC NO.</label><input type="text" class="cr-svc" readonly placeholder="Auto-filled" value="${prefill?.serviceNumber||''}" style="background:var(--bg);color:var(--muted)"/></div>
     <div class="fg" style="margin:0"><label style="font-size:10px">RANK</label><input type="text" class="cr-rank" readonly placeholder="Auto-filled" value="${prefill?.rank||''}" style="background:var(--bg);color:var(--muted)"/></div>
     <div class="fg" style="margin:0"><label style="font-size:10px">NAME</label>
       <select class="cr-name" onchange="onCrewNameSelect(this)">
-        <option value="">-- Select Crew --</option>
-        ${crewOptions}
+        <option value="">-- Select Crew --</option>${crewOptions}
       </select>
     </div>
     <div class="fg" style="margin:0"><label style="font-size:10px">HRS FLOWN (H:MM)</label><input type="text" class="cr-hrs" placeholder="e.g. 1:30" maxlength="6" oninput="validateHHMM(this)" value="${prefill?.hoursFlown||''}"/></div>
     <button class="btn btn-danger btn-sm cr-del" onclick="this.parentElement.remove()" style="align-self:flex-end;padding:7px 10px">✕</button>`;
   container.appendChild(div);
-  // If prefilling from saved mission, set the select to match by name
-  if (prefill?.name) {
-    const sel = div.querySelector('.cr-name');
-    const match = allCrew.find(c => c.name === prefill.name);
-    if (match) sel.value = match.id;
-    else {
-      // Crew may have been removed; add a ghost option
-      const ghost = document.createElement('option');
-      ghost.value = ''; ghost.textContent = prefill.name; ghost.selected = true;
-      sel.insertBefore(ghost, sel.options[1]);
-    }
+  if(prefill?.name){
+    const sel=div.querySelector('.cr-name');
+    const match=allCrew.find(c=>c.name===prefill.name);
+    if(match)sel.value=match.id;
+    else{const g=document.createElement('option');g.value='';g.textContent=prefill.name;g.selected=true;sel.insertBefore(g,sel.options[1]);}
   }
 }
 
-window.onCrewNameSelect = function(sel) {
-  const row = sel.closest('.crew-row');
-  const opt = sel.options[sel.selectedIndex];
-  row.querySelector('.cr-rank').value = opt.dataset.rank || '';
-  row.querySelector('.cr-svc').value  = opt.dataset.svc  || '';
-};
+function onCrewNameSelect(sel){const row=sel.closest('.crew-row'),opt=sel.options[sel.selectedIndex];row.querySelector('.cr-rank').value=opt.dataset.rank||'';row.querySelector('.cr-svc').value=opt.dataset.svc||'';}
 
-function getCrewManifest() {
-  return [...document.querySelectorAll('#crewRows .crew-row')].map(row => {
-    const sel = row.querySelector('.cr-name');
-    const opt = sel.options[sel.selectedIndex];
-    const name = opt?.dataset?.name || opt?.textContent?.trim() || '';
-    return {
-      role: row.querySelector('.cr-role').value,
-      serviceNumber: row.querySelector('.cr-svc').value,
-      rank: row.querySelector('.cr-rank').value,
-      name,
-      hoursFlown: row.querySelector('.cr-hrs').value
-    };
-  }).filter(c => c.name);
+function getCrewManifest(){
+  return[...document.querySelectorAll('#crewRows .crew-row')].map(row=>{
+    const sel=row.querySelector('.cr-name'),opt=sel.options[sel.selectedIndex];
+    const name=opt?.dataset?.name||opt?.textContent?.trim()||'';
+    return{role:row.querySelector('.cr-role').value,serviceNumber:row.querySelector('.cr-svc').value,rank:row.querySelector('.cr-rank').value,name,hoursFlown:row.querySelector('.cr-hrs').value};
+  }).filter(c=>c.name);
 }
 
-async function saveMission() {
-  const mDate = document.getElementById('mDate').value;
-  const mType = document.getElementById('mType').value;
-  const mAcType = document.getElementById('mAcType').value;
-  const mTail = document.getElementById('mTail').value;
-  const mSorties = document.getElementById('mSorties').value;
-  const mHrs = document.getElementById('mFlightHrs').value;
-  if (!mDate || !mType || !mSorties || !mHrs) { notify('Please fill all required fields.','error'); return; }
+async function saveMission(){
+  const mDate=document.getElementById('mDate').value,mType=document.getElementById('mType').value;
+  const mSorties=document.getElementById('mSorties').value,mHrs=document.getElementById('mFlightHrs').value;
+  if(!mDate||!mType||!mSorties||!mHrs){notify('Please fill all required fields.','error');return;}
   showLoading('SAVING MISSION...');
-  try {
-    // Upload attachments
-    const files = document.getElementById('mFiles').files;
-    const attachments = [];
-    for (const file of files) {
-      const r = sRef(storage, `missions/${Date.now()}_${file.name}`);
-      await uploadBytes(r, file);
-      const url = await getDownloadURL(r);
-      attachments.push({ name:file.name, url });
-    }
-    const payload = {
-      date: mDate,
-      missionNumber: document.getElementById('mNumber').value,
-      missionType: mType,
-      operationName: document.getElementById('mOpName').value,
-      areaOfOperation: document.getElementById('mArea').value,
-      classification: document.getElementById('mClass').value,
-      priority: document.getElementById('mPriority').value,
-      aircraftType: mAcType,
-      tailNumber: mTail,
-      fuelUplift: +document.getElementById('mFuelUp').value || 0,
-      fuelRemaining: +document.getElementById('mFuelRem').value || 0,
-      fuelConsumed: +document.getElementById('mFuelCon').value || 0,
-      sorties: +mSorties,
-      flightHours: hmmToDecimal(mHrs),
-      flightHoursDisplay: mHrs,
-      takeoffTime: document.getElementById('mTakeoff').value,
-      landingTime: document.getElementById('mLanding').value,
-      blockTime: +document.getElementById('mBlock').value || 0,
-      crew: getCrewManifest(),
-      outcome: document.getElementById('mOutcome').value,
-      remarks: document.getElementById('mRemarks').value,
-      attachments,
-      analystId: currentUser.uid,
-      analystName: currentUserData.name || currentUser.email,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+  try{
+    const files=document.getElementById('mFiles').files,attachments=[];
+    for(const file of files){const r=sRef(storage,`missions/${Date.now()}_${file.name}`);await uploadBytes(r,file);attachments.push({name:file.name,url:await getDownloadURL(r)});}
+    const mTail=document.getElementById('mTail').value;
+    const payload={
+      date:mDate,missionNumber:document.getElementById('mNumber').value,missionType:mType,
+      operationName:document.getElementById('mOpName').value,areaOfOperation:document.getElementById('mArea').value,
+      classification:document.getElementById('mClass').value,priority:document.getElementById('mPriority').value,
+      aircraftType:document.getElementById('mAcType').value,tailNumber:mTail,
+      fuelUplift:+document.getElementById('mFuelUp').value||0,fuelRemaining:+document.getElementById('mFuelRem').value||0,fuelConsumed:+document.getElementById('mFuelCon').value||0,
+      sorties:+mSorties,flightHours:hmmToDecimal(mHrs),flightHoursDisplay:mHrs,
+      takeoffTime:document.getElementById('mTakeoff').value,landingTime:document.getElementById('mLanding').value,blockTime:+document.getElementById('mBlock').value||0,
+      crew:getCrewManifest(),outcome:document.getElementById('mOutcome').value,remarks:document.getElementById('mRemarks').value,
+      attachments,analystId:currentUser.uid,analystName:currentUserData.name||currentUser.email,createdAt:serverTimestamp(),updatedAt:serverTimestamp()
     };
-    if (editingMissionId) {
-      await updateDoc(doc(db,'missions',editingMissionId), { ...payload, createdAt: undefined });
-      await logAudit('MISSION_UPDATE', `Mission ${payload.missionNumber} updated`);
-      notify('Mission updated successfully','success');
-    } else {
-      const ref = await addDoc(collection(db,'missions'), payload);
-      // Update aircraft totals
-      if (mTail) {
-        const acRef = allAircraft.find(a => a.tailNumber === mTail);
-        if (acRef) {
-          await updateDoc(doc(db,'aircraft',acRef.id), {
-            totalFlightHours: (acRef.totalFlightHours||0) + (+mHrs||0),
-            totalMissions: (acRef.totalMissions||0)+1,
-            lastMissionDate: mDate
+    if(editingMissionId){
+      const {createdAt, ...updatePayload} = payload;
+      await updateDoc(doc(db,'missions',editingMissionId), updatePayload);
+      await logAudit('MISSION_UPDATE',`Mission ${payload.missionNumber} updated`);
+      notify('Mission updated','success');
+    }
+    else{
+      await addDoc(collection(db,'missions'),payload);
+      const hrsDecimal = hmmToDecimal(mHrs);
+      // ── Update aircraft totals ──
+      if(mTail){
+        const acRef=allAircraft.find(a=>a.tailNumber===mTail);
+        if(acRef){
+          await updateDoc(doc(db,'aircraft',acRef.id),{
+            totalFlightHours:(+acRef.totalFlightHours||0)+hrsDecimal,
+            totalMissions:(+acRef.totalMissions||0)+1,
+            lastMissionDate:mDate
           });
+          acRef.totalFlightHours=(+acRef.totalFlightHours||0)+hrsDecimal;
+          acRef.totalMissions=(+acRef.totalMissions||0)+1;
         }
       }
-      await logAudit('MISSION_CREATE', `Mission ${payload.missionNumber} created`);
-      notify('Mission saved successfully','success');
+      // ── Update crew totals (match by name only) ──
+      const crewManifest = getCrewManifest();
+      for(const c of crewManifest){
+        const crewRef = allCrew.find(x=>x.name.trim().toLowerCase()===c.name.trim().toLowerCase());
+        if(crewRef){
+          const crewHrs = hmmToDecimal(c.hoursFlown||'0:00');
+          await updateDoc(doc(db,'crew',crewRef.id),{
+            totalFlightHours: (+crewRef.totalFlightHours||0) + crewHrs,
+            totalMissions: (+crewRef.totalMissions||0) + 1
+          });
+          crewRef.totalFlightHours=(+crewRef.totalFlightHours||0)+crewHrs;
+          crewRef.totalMissions=(+crewRef.totalMissions||0)+1;
+        }
+      }
+      await logAudit('MISSION_CREATE',`Mission ${payload.missionNumber} created`);
+      notify('Mission saved','success');
     }
-    await loadAllData();
-    clearMissionForm();
-    editingMissionId = null;
-  } catch(e) {
-    notify('Error: ' + e.message, 'error');
-  }
+    await loadAllData();clearMissionForm();editingMissionId=null;
+  }catch(e){notify('Error: '+e.message,'error');}
   hideLoading();
 }
 
-function clearMissionForm() {
-  ['mDate','mNumber','mOpName','mArea','mFuelUp','mFuelRem','mFuelCon','mSorties','mFlightHrs','mTakeoff','mLanding','mBlock','mRemarks'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('mType').value = '';
-  document.getElementById('mAcType').value = '';
-  document.getElementById('mTail').value = '';
-  document.getElementById('crewRows').innerHTML = '';
-  document.getElementById('mNumber').value = genMissionNumber();
-  document.getElementById('mDate').value = new Date().toISOString().slice(0,10);
-  editingMissionId = null;
-  addCrewRow();
+function clearMissionForm(){
+  ['mDate','mNumber','mOpName','mArea','mFuelUp','mFuelRem','mFuelCon','mSorties','mFlightHrs','mTakeoff','mLanding','mBlock','mRemarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('mType').value='';document.getElementById('mAcType').value='';document.getElementById('mTail').value='';
+  document.getElementById('crewRows').innerHTML='';document.getElementById('mNumber').value=genMissionNumber();
+  document.getElementById('mDate').value=new Date().toISOString().slice(0,10);editingMissionId=null;addCrewRow();
 }
 
-// ─── MISSION RECORDS ───
-function renderRecords() {
-  populateSelect('recType', refData.missionTypes);
-  const years = [...new Set(allMissions.map(m => m.date?.slice(0,4)).filter(Boolean))].sort().reverse();
-  const yrSel = document.getElementById('recYear');
-  yrSel.innerHTML = '<option value="">All Years</option>' + years.map(y=>`<option>${y}</option>`).join('');
+// ── MISSION RECORDS ──
+function renderRecords(){
+  populateSelect('recType',refData.missionTypes);
+  const years=[...new Set(allMissions.map(m=>m.date?.slice(0,4)).filter(Boolean))].sort().reverse();
+  document.getElementById('recYear').innerHTML='<option value="">All Years</option>'+years.map(y=>`<option>${y}</option>`).join('');
   filterRecords();
 }
 
-function filterRecords() {
-  const search = document.getElementById('recSearch').value.toLowerCase();
-  const type = document.getElementById('recType').value;
-  const outcome = document.getElementById('recOutcome').value;
-  const month = document.getElementById('recMonth').value;
-  const year = document.getElementById('recYear').value;
-  filteredRec = allMissions.filter(m => {
-    if (type && m.missionType !== type) return false;
-    if (outcome && m.outcome !== outcome) return false;
-    if (month && m.date && m.date.slice(5,7) !== month) return false;
-    if (year && m.date && m.date.slice(0,4) !== year) return false;
-    if (search && ![m.missionNumber,m.operationName,m.tailNumber,m.missionType].join(' ').toLowerCase().includes(search)) return false;
+function filterRecords(){
+  const search=document.getElementById('recSearch').value.toLowerCase();
+  const type=document.getElementById('recType').value,outcome=document.getElementById('recOutcome').value;
+  const month=document.getElementById('recMonth').value,year=document.getElementById('recYear').value;
+  filteredRec=allMissions.filter(m=>{
+    if(type&&m.missionType!==type)return false;if(outcome&&m.outcome!==outcome)return false;
+    if(month&&m.date&&m.date.slice(5,7)!==month)return false;if(year&&m.date&&m.date.slice(0,4)!==year)return false;
+    if(search&&![m.missionNumber,m.operationName,m.tailNumber,m.missionType].join(' ').toLowerCase().includes(search))return false;
     return true;
-  });
-  recPage = 1;
-  drawRecords();
+  });recPage=1;drawRecords();
 }
 
-function drawRecords() {
-  const start = (recPage-1)*recPageSize;
-  const page = filteredRec.slice(start, start+recPageSize);
-  const tbl = document.getElementById('recordsTbl');
-  tbl.innerHTML = page.length ? page.map(m => `
-    <tr>
-      <td class="mono">${m.missionNumber||'—'}</td>
-      <td>${m.date||'—'}</td>
-      <td><span class="badge badge-info">${m.missionType||'—'}</span></td>
-      <td>${m.operationName||'—'}</td>
-      <td>${m.tailNumber||'—'}</td>
-      <td>${m.sorties||0}</td>
-      <td>${m.flightHoursDisplay || decimalToHmm(m.flightHours)}</td>
-      <td>${outcomeBadge(m.outcome)}</td>
-      <td>
-        <button class="btn btn-secondary btn-sm" onclick="viewMission('${m.id}')">👁</button>
-        ${canEdit() ? `<button class="btn btn-secondary btn-sm" onclick="editMission('${m.id}')">✏</button>` : ''}
-        ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteMission('${m.id}')">🗑</button>` : ''}
-      </td>
-    </tr>`).join('') : `<tr><td colspan="9" class="empty-state">No records found</td></tr>`;
-  // Pagination
-  const total = Math.ceil(filteredRec.length / recPageSize);
-  const pg = document.getElementById('recPagination');
-  pg.innerHTML = '';
-  if (total > 1) {
-    for (let i=1; i<=total; i++) {
-      const b = document.createElement('button');
-      b.className = `pg-btn ${i===recPage?'active':''}`;
-      b.textContent = i;
-      b.onclick = () => { recPage=i; drawRecords(); };
-      pg.appendChild(b);
-    }
-  }
+function drawRecords(){
+  const start=(recPage-1)*recPageSize,page=filteredRec.slice(start,start+recPageSize);
+  const tbl=document.getElementById('recordsTbl');
+  tbl.innerHTML=page.length?page.map(m=>`<tr>
+    <td class="mono">${m.missionNumber||'—'}</td><td>${m.date||'—'}</td>
+    <td><span class="badge badge-info">${m.missionType||'—'}</span></td>
+    <td>${m.operationName||'—'}</td><td>${m.tailNumber||'—'}</td><td>${m.sorties||0}</td>
+    <td>${m.flightHoursDisplay||decimalToHmm(m.flightHours)}</td><td>${outcomeBadge(m.outcome)}</td>
+    <td>
+      <button class="btn btn-secondary btn-sm" onclick="viewMission('${m.id}')">👁</button>
+      ${canEdit()?`<button class="btn btn-secondary btn-sm" onclick="editMission('${m.id}')">✏</button>`:''}
+      ${canDelete()?`<button class="btn btn-danger btn-sm" onclick="deleteMission('${m.id}')">🗑</button>`:''}
+    </td></tr>`).join(''):`<tr><td colspan="9" class="empty-state">No records found</td></tr>`;
+  const total=Math.ceil(filteredRec.length/recPageSize),pg=document.getElementById('recPagination');pg.innerHTML='';
+  if(total>1)for(let i=1;i<=total;i++){const b=document.createElement('button');b.className=`pg-btn ${i===recPage?'active':''}`;b.textContent=i;b.onclick=()=>{recPage=i;drawRecords();};pg.appendChild(b);}
 }
 
-function viewMission(id) {
-  const m = allMissions.find(x => x.id === id);
-  if (!m) return;
-  document.getElementById('mModalTitle').textContent = `Mission — ${m.missionNumber}`;
-  const crew = (m.crew||[]).map(c => `<tr><td>${c.role}</td><td>${c.rank}</td><td>${c.name}</td><td>${c.serviceNumber}</td><td>${c.hoursFlown}</td></tr>`).join('');
-  const attach = (m.attachments||[]).map(a => `<a href="${a.url}" target="_blank" style="color:var(--primary)">${a.name}</a>`).join(', ') || 'None';
-  document.getElementById('mModalBody').innerHTML = `
-    <div class="info-row">
-      <div class="info-item"><span>Date</span>${m.date}</div>
-      <div class="info-item"><span>Mission No.</span><span class="mono">${m.missionNumber}</span></div>
-      <div class="info-item"><span>Type</span>${m.missionType}</div>
-      <div class="info-item"><span>Priority</span>${m.priority}</div>
-      <div class="info-item"><span>Classification</span>${m.classification}</div>
-    </div>
-    <div class="info-row">
-      <div class="info-item"><span>Operation</span>${m.operationName||'—'}</div>
-      <div class="info-item"><span>Area of Operation</span>${m.areaOfOperation||'—'}</div>
-    </div>
-    <div class="info-row">
-      <div class="info-item"><span>Aircraft</span>${m.aircraftType} / ${m.tailNumber}</div>
-      <div class="info-item"><span>Sorties</span>${m.sorties}</div>
-      <div class="info-item"><span>Flight Hours</span>${m.flightHours}</div>
-      <div class="info-item"><span>Fuel Consumed</span>${m.fuelConsumed} L</div>
-    </div>
-    <div class="info-row">
-      <div class="info-item"><span>Takeoff</span>${m.takeoffTime||'—'}</div>
-      <div class="info-item"><span>Landing</span>${m.landingTime||'—'}</div>
-      <div class="info-item"><span>Block Time</span>${m.blockTime||'—'} hrs</div>
-      <div class="info-item"><span>Outcome</span>${outcomeBadge(m.outcome)}</div>
-    </div>
+function viewMission(id){
+  const m=allMissions.find(x=>x.id===id);if(!m)return;
+  document.getElementById('mModalTitle').textContent=`Mission — ${m.missionNumber}`;
+  const crew=(m.crew||[]).map(c=>`<tr><td>${c.role}</td><td>${c.rank}</td><td>${c.name}</td><td>${c.serviceNumber}</td><td>${c.hoursFlown}</td></tr>`).join('');
+  const attach=(m.attachments||[]).map(a=>`<a href="${a.url}" target="_blank" style="color:var(--primary)">${a.name}</a>`).join(', ')||'None';
+  document.getElementById('mModalBody').innerHTML=`
+    <div class="info-row"><div class="info-item"><span>Date</span>${m.date}</div><div class="info-item"><span>Mission No.</span><span class="mono">${m.missionNumber}</span></div><div class="info-item"><span>Type</span>${m.missionType}</div><div class="info-item"><span>Priority</span>${m.priority}</div><div class="info-item"><span>Classification</span>${m.classification}</div></div>
+    <div class="info-row"><div class="info-item"><span>Operation</span>${m.operationName||'—'}</div><div class="info-item"><span>Area of Operation</span>${m.areaOfOperation||'—'}</div></div>
+    <div class="info-row"><div class="info-item"><span>Aircraft</span>${m.aircraftType||'—'} / ${m.tailNumber||'—'}</div><div class="info-item"><span>Sorties</span>${m.sorties}</div><div class="info-item"><span>Flight Hours</span>${m.flightHoursDisplay||decimalToHmm(m.flightHours)}</div><div class="info-item"><span>Fuel Consumed</span>${m.fuelConsumed} L</div></div>
     <div class="section-divider">Aircrew Manifest</div>
     <div class="tbl-wrap"><table><thead><tr><th>Role</th><th>Rank</th><th>Name</th><th>Svc No.</th><th>Hrs Flown</th></tr></thead><tbody>${crew||'<tr><td colspan="5">No crew recorded</td></tr>'}</tbody></table></div>
-    <div class="section-divider">Remarks</div>
-    <p style="font-size:13px;color:var(--text)">${m.remarks||'No remarks'}</p>
-    <div class="section-divider">Attachments</div>
-    <p style="font-size:13px">${attach}</p>`;
+    <div class="section-divider">Remarks</div><p style="font-size:13px">${m.remarks||'No remarks'}</p>
+    <div class="section-divider">Attachments</div><p style="font-size:13px">${attach}</p>`;
   openModal('missionModal');
 }
 
-async function editMission(id) {
-  const m = allMissions.find(x => x.id === id);
-  if (!m) return;
-  editingMissionId = id;
-  navigate('missionEntry');
-  setTimeout(() => {
-    document.getElementById('mDate').value = m.date||'';
-    document.getElementById('mNumber').value = m.missionNumber||'';
-    document.getElementById('mOpName').value = m.operationName||'';
-    document.getElementById('mArea').value = m.areaOfOperation||'';
-    document.getElementById('mClass').value = m.classification||'RESTRICTED';
-    document.getElementById('mPriority').value = m.priority||'ROUTINE';
-    document.getElementById('mFuelUp').value = m.fuelUplift||'';
-    document.getElementById('mFuelRem').value = m.fuelRemaining||'';
-    document.getElementById('mFuelCon').value = m.fuelConsumed||'';
-    document.getElementById('mSorties').value = m.sorties||'';
-            document.getElementById('mFlightHrs').value = m.flightHoursDisplay || decimalToHmm(m.flightHours);
-    document.getElementById('mTakeoff').value = m.takeoffTime||'';
-    document.getElementById('mLanding').value = m.landingTime||'';
-    document.getElementById('mBlock').value = m.blockTime||'';
-    document.getElementById('mOutcome').value = m.outcome||'Successful';
-    document.getElementById('mRemarks').value = m.remarks||'';
-    document.getElementById('mType').value = m.missionType||'';
-    document.getElementById('mAcType').value = m.aircraftType||'';
-    document.getElementById('mTail').value = m.tailNumber||'';
-    // Crew
-    const cont = document.getElementById('crewRows');
-    cont.innerHTML = '';
-    (m.crew||[]).forEach(c => addCrewRow(c));
-  }, 100);
+async function editMission(id){
+  const m=allMissions.find(x=>x.id===id);if(!m)return;
+  editingMissionId=id;navigate('missionEntry');
+  setTimeout(()=>{
+    document.getElementById('mDate').value=m.date||'';document.getElementById('mNumber').value=m.missionNumber||'';
+    document.getElementById('mOpName').value=m.operationName||'';document.getElementById('mArea').value=m.areaOfOperation||'';
+    document.getElementById('mClass').value=m.classification||'RESTRICTED';document.getElementById('mPriority').value=m.priority||'ROUTINE';
+    document.getElementById('mFuelUp').value=m.fuelUplift||'';document.getElementById('mFuelRem').value=m.fuelRemaining||'';document.getElementById('mFuelCon').value=m.fuelConsumed||'';
+    document.getElementById('mSorties').value=m.sorties||'';document.getElementById('mFlightHrs').value=m.flightHoursDisplay||decimalToHmm(m.flightHours);
+    document.getElementById('mTakeoff').value=m.takeoffTime||'';document.getElementById('mLanding').value=m.landingTime||'';document.getElementById('mBlock').value=m.blockTime||'';
+    document.getElementById('mOutcome').value=m.outcome||'Successful';document.getElementById('mRemarks').value=m.remarks||'';
+    document.getElementById('mType').value=m.missionType||'';document.getElementById('mAcType').value=m.aircraftType||'';document.getElementById('mTail').value=m.tailNumber||'';
+    document.getElementById('crewRows').innerHTML='';(m.crew||[]).forEach(c=>addCrewRow(c));
+  },100);
 }
 
-async function deleteMission(id) {
-  if (!confirm('Delete this mission record? This action cannot be undone.')) return;
+async function deleteMission(id){
+  if(!confirm('Delete this mission? This cannot be undone.'))return;
   showLoading('DELETING...');
-  const m = allMissions.find(x => x.id === id);
-  await deleteDoc(doc(db,'missions',id));
-  await logAudit('MISSION_DELETE', `Mission ${m?.missionNumber||id} deleted`);
-  await loadAllData();
-  filterRecords();
-  hideLoading();
-  notify('Mission deleted','warn');
+  const m=allMissions.find(x=>x.id===id);
+  await deleteDoc(doc(db,'missions',id));await logAudit('MISSION_DELETE',`Mission ${m?.missionNumber||id} deleted`);
+  await loadAllData();filterRecords();hideLoading();notify('Mission deleted','warn');
 }
 
-// ─── EXPORTS ───
-function exportCSV() {
-  const headers = ['Mission No','Date','Type','Operation','Aircraft','Sorties','Flight Hours','Fuel Consumed','Outcome'];
-  const rows = filteredRec.map(m => [m.missionNumber,m.date,m.missionType,m.operationName,m.tailNumber,m.sorties,m.flightHours,m.fuelConsumed,m.outcome]);
-  const csv = [headers,...rows].map(r => r.map(v => `"${v||''}"`).join(',')).join('\n');
-  download('missions.csv', csv, 'text/csv');
+// ── EXPORTS ──
+function exportCSV(){
+  const h=['Mission No','Date','Type','Operation','Aircraft','Sorties','Flight Hours','Fuel Consumed','Outcome'];
+  const r=filteredRec.map(m=>[m.missionNumber,m.date,m.missionType,m.operationName,m.tailNumber,m.sorties,m.flightHoursDisplay||decimalToHmm(m.flightHours),m.fuelConsumed,m.outcome]);
+  download('missions.csv',[h,...r].map(r=>r.map(v=>`"${v||''}"`).join(',')).join('\n'),'text/csv');
 }
-
-function exportExcel() {
-  const headers = ['Mission No','Date','Type','Operation','Aircraft','Sorties','Flight Hours','Fuel Consumed','Outcome'];
-  const rows = filteredRec.map(m => [m.missionNumber,m.date,m.missionType,m.operationName,m.tailNumber,m.sorties,m.flightHours,m.fuelConsumed,m.outcome]);
-  let xml = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Missions"><Table>`;
-  [headers,...rows].forEach(row => {
-    xml += '<Row>' + row.map(c => `<Cell><Data ss:Type="String">${c||''}</Data></Cell>`).join('') + '</Row>';
-  });
-  xml += '</Table></Worksheet></Workbook>';
-  download('missions.xls', xml, 'application/vnd.ms-excel');
+function exportExcel(){
+  const h=['Mission No','Date','Type','Operation','Aircraft','Sorties','Flight Hours','Fuel Consumed','Outcome'];
+  const r=filteredRec.map(m=>[m.missionNumber,m.date,m.missionType,m.operationName,m.tailNumber,m.sorties,m.flightHoursDisplay||decimalToHmm(m.flightHours),m.fuelConsumed,m.outcome]);
+  let xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Missions"><Table>`;
+  [h,...r].forEach(row=>{xml+='<Row>'+row.map(c=>`<Cell><Data ss:Type="String">${c||''}</Data></Cell>`).join('')+'</Row>';});
+  xml+='</Table></Worksheet></Workbook>';download('missions.xls',xml,'application/vnd.ms-excel');
 }
+function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();}
 
-function download(name, content, type) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content],{type}));
-  a.download = name; a.click();
-}
-
-// ─── ANALYSIS ───
-function loadAnalysis() {
-  const from = document.getElementById('anFrom').value;
-  const to = document.getElementById('anTo').value;
-  const ac = document.getElementById('anAircraft').value;
-  const mt = document.getElementById('anMType').value;
-  // Populate filters
-  populateSelect('anAircraft', allAircraft.map(a=>a.tailNumber));
-  populateSelect('anMType', refData.missionTypes);
-  let data = allMissions;
-  if (from) data = data.filter(m => m.date >= from);
-  if (to) data = data.filter(m => m.date <= to);
-  if (ac) data = data.filter(m => m.tailNumber === ac);
-  if (mt) data = data.filter(m => m.missionType === mt);
-
-  const types = refData.missionTypes;
-  const colors = ['#22C55E','#38bdf8','#F59E0B','#EF4444','#a855f7','#f97316','#ec4899','#14b8a6'];
+// ── ANALYSIS ──
+function loadAnalysis(){
+  const from=document.getElementById('anFrom').value,to=document.getElementById('anTo').value;
+  const ac=document.getElementById('anAircraft').value,mt=document.getElementById('anMType').value;
+  populateSelect('anAircraft',allAircraft.map(a=>a.tailNumber));populateSelect('anMType',refData.missionTypes);
+  let data=allMissions;
+  if(from)data=data.filter(m=>m.date>=from);if(to)data=data.filter(m=>m.date<=to);
+  if(ac)data=data.filter(m=>m.tailNumber===ac);if(mt)data=data.filter(m=>m.missionType===mt);
+  const types=refData.missionTypes,colors=['#22C55E','#38bdf8','#F59E0B','#EF4444','#a855f7','#f97316','#ec4899','#14b8a6'];
   makeChart('anChart1','bar',types,[{label:'Missions',data:types.map(t=>data.filter(m=>m.missionType===t).length),backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:1}]);
   makeChart('anChart2','bar',types,[{label:'Sorties',data:types.map(t=>data.filter(m=>m.missionType===t).reduce((s,m)=>s+(+m.sorties||0),0)),backgroundColor:'#38bdf899',borderColor:'#38bdf8',borderWidth:1}]);
   makeChart('anChart3','bar',types,[{label:'Hrs',data:types.map(t=>data.filter(m=>m.missionType===t).reduce((s,m)=>s+(+m.flightHours||0),0)),backgroundColor:'#F59E0B99',borderColor:'#F59E0B',borderWidth:1}]);
-
-  const acList = [...new Set(data.map(m=>m.tailNumber).filter(Boolean))];
+  const acList=[...new Set(data.map(m=>m.tailNumber).filter(Boolean))];
   makeChart('anChart4','bar',acList,[{label:'Hrs',data:acList.map(a=>data.filter(m=>m.tailNumber===a).reduce((s,m)=>s+(+m.flightHours||0),0)),backgroundColor:'#22C55E99',borderColor:'#22C55E',borderWidth:1}]);
   makeChart('anChart5','bar',acList,[{label:'Fuel (L)',data:acList.map(a=>data.filter(m=>m.tailNumber===a).reduce((s,m)=>s+(+m.fuelConsumed||0),0)),backgroundColor:'#EF444499',borderColor:'#EF4444',borderWidth:1}]);
-
-  const months = getLast6Months();
+  const months=getLast6Months();
   makeChart('anChart6','line',months.map(m=>m.slice(5)),[{label:'Missions',data:months.map(m=>data.filter(x=>(x.date||'').startsWith(m)).length),borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.15)',fill:true,tension:.4}]);
 }
 
-// ─── REPORTS ───
-async function generateReport() {
-  const month = document.getElementById('repMonth').value;
-  const year = document.getElementById('repYear').value;
-  const remarks = document.getElementById('repRemarks').value;
-  const ym = `${year}-${month}`;
-  const data = allMissions.filter(m => (m.date||'').startsWith(ym));
-  const settings = await getDoc(doc(db,'settings','main')).then(d=>d.exists()?d.data():{}).catch(()=>({}));
-  const totalSorties = data.reduce((s,m)=>s+(+m.sorties||0),0);
-  const totalHrs = data.reduce((s,m)=>s+(+m.flightHours||0),0).toFixed(1);
-  const totalFuel = data.reduce((s,m)=>s+(+m.fuelConsumed||0),0).toLocaleString();
-  const successful = data.filter(m=>m.outcome==='Successful').length;
-  const monthName = new Date(year, +month-1, 1).toLocaleString('default',{month:'long'});
-
-  const typeRows = refData.missionTypes.map(t => {
-    const ms = data.filter(m=>m.missionType===t);
-    if (!ms.length) return '';
-    return `<tr><td>${t}</td><td>${ms.length}</td><td>${ms.reduce((s,m)=>s+(+m.sorties||0),0)}</td><td>${ms.reduce((s,m)=>s+(+m.flightHours||0),0).toFixed(1)}</td></tr>`;
-  }).join('');
-
-  const acRows = allAircraft.map(a => {
-    const ms = data.filter(m=>m.tailNumber===a.tailNumber);
-    if (!ms.length) return '';
-    return `<tr><td>${a.tailNumber}</td><td>${a.aircraftType}</td><td>${ms.length}</td><td>${ms.reduce((s,m)=>s+(+m.flightHours||0),0).toFixed(1)}</td><td>${ms.reduce((s,m)=>s+(+m.fuelConsumed||0),0).toLocaleString()}</td></tr>`;
-  }).join('');
-
-  document.getElementById('reportOutput').innerHTML = `
+// ── REPORTS ──
+async function generateReport(){
+  const month=document.getElementById('repMonth').value,year=document.getElementById('repYear').value,remarks=document.getElementById('repRemarks').value;
+  const ym=`${year}-${month}`,data=allMissions.filter(m=>(m.date||'').startsWith(ym));
+  const settings=await getDoc(doc(db,'settings','main')).then(d=>d.exists()?d.data():{}).catch(()=>({}));
+  const totalSorties=data.reduce((s,m)=>s+(+m.sorties||0),0);
+  const totalHrs=decimalToHmm(data.reduce((s,m)=>s+(+m.flightHours||0),0));
+  const totalFuel=data.reduce((s,m)=>s+(+m.fuelConsumed||0),0).toLocaleString();
+  const successful=data.filter(m=>m.outcome==='Successful').length;
+  const monthName=new Date(year,+month-1,1).toLocaleString('default',{month:'long'});
+  const typeRows=refData.missionTypes.map(t=>{const ms=data.filter(m=>m.missionType===t);if(!ms.length)return'';return`<tr><td>${t}</td><td>${ms.length}</td><td>${ms.reduce((s,m)=>s+(+m.sorties||0),0)}</td><td>${decimalToHmm(ms.reduce((s,m)=>s+(+m.flightHours||0),0))}</td></tr>`;}).join('');
+  const acRows=allAircraft.map(a=>{const ms=data.filter(m=>m.tailNumber===a.tailNumber);if(!ms.length)return'';return`<tr><td>${a.tailNumber}</td><td>${a.aircraftType}</td><td>${ms.length}</td><td>${decimalToHmm(ms.reduce((s,m)=>s+(+m.flightHours||0),0))}</td><td>${ms.reduce((s,m)=>s+(+m.fuelConsumed||0),0).toLocaleString()}</td></tr>`;}).join('');
+  document.getElementById('reportOutput').innerHTML=`
     <div id="printArea" style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:32px;margin-top:16px">
       <div style="text-align:center;border-bottom:2px solid var(--primary);padding-bottom:20px;margin-bottom:24px">
         <div style="font-size:32px;color:var(--primary)">✈</div>
         <h1 style="font-size:20px;letter-spacing:3px;color:var(--primary)">NIGERIAN AIR FORCE</h1>
         <h2 style="font-size:14px;letter-spacing:2px">115 SPECIAL OPERATIONS GROUP</h2>
-        <h3 style="font-size:12px;color:var(--muted);margin-top:4px">MONTHLY MISSION ANALYSIS REPORT</h3>
+        <h3 style="font-size:12px;color:var(--muted)">MONTHLY MISSION ANALYSIS REPORT</h3>
         <div style="margin-top:8px"><span class="badge-restricted">RESTRICTED</span></div>
         <p style="margin-top:8px;font-size:13px;color:var(--muted)" class="mono">PERIOD: ${monthName.toUpperCase()} ${year}</p>
       </div>
       <div class="section-divider">1. EXECUTIVE SUMMARY</div>
-      <p style="font-size:13px;line-height:1.8">During the period of ${monthName} ${year}, ${settings.unitName||'115 Special Operations Group'} conducted <strong>${data.length}</strong> missions comprising <strong>${totalSorties}</strong> sorties with a total of <strong>${totalHrs}</strong> flight hours. Mission success rate was <strong>${data.length?Math.round(successful/data.length*100):0}%</strong>.</p>
+      <p style="font-size:13px;line-height:1.8">${settings.unitName||'115 Special Operations Group'} conducted <strong>${data.length}</strong> missions, <strong>${totalSorties}</strong> sorties, <strong>${totalHrs}</strong> flight hours. Success rate: <strong>${data.length?Math.round(successful/data.length*100):0}%</strong>.</p>
       <div class="section-divider">2. MISSION BREAKDOWN</div>
       <div class="tbl-wrap"><table><thead><tr><th>Mission Type</th><th>Missions</th><th>Sorties</th><th>Flight Hrs</th></tr></thead><tbody>${typeRows||'<tr><td colspan="4">No data</td></tr>'}</tbody></table></div>
       <div class="section-divider">3. AIRCRAFT UTILIZATION</div>
       <div class="tbl-wrap"><table><thead><tr><th>Tail No.</th><th>Type</th><th>Missions</th><th>Flight Hrs</th><th>Fuel (L)</th></tr></thead><tbody>${acRows||'<tr><td colspan="5">No data</td></tr>'}</tbody></table></div>
       <div class="section-divider">4. FUEL ANALYSIS</div>
-      <div class="info-row">
-        <div class="info-item"><span>Total Fuel Consumed</span>${totalFuel} Litres</div>
-        <div class="info-item"><span>Avg per Mission</span>${data.length?(data.reduce((s,m)=>s+(+m.fuelConsumed||0),0)/data.length).toFixed(0):0} L</div>
-      </div>
+      <div class="info-row"><div class="info-item"><span>Total Fuel</span>${totalFuel} L</div><div class="info-item"><span>Avg/Mission</span>${data.length?(data.reduce((s,m)=>s+(+m.fuelConsumed||0),0)/data.length).toFixed(0):0} L</div></div>
       <div class="section-divider">5. OPERATIONAL HIGHLIGHTS</div>
       <div class="info-row">
-        <div class="info-item"><span>Total Missions</span>${data.length}</div>
-        <div class="info-item"><span>Total Sorties</span>${totalSorties}</div>
-        <div class="info-item"><span>Total Flight Hours</span>${totalHrs}</div>
-        <div class="info-item"><span>Successful</span>${successful}</div>
+        <div class="info-item"><span>Total Missions</span>${data.length}</div><div class="info-item"><span>Total Sorties</span>${totalSorties}</div>
+        <div class="info-item"><span>Flight Hours</span>${totalHrs}</div><div class="info-item"><span>Successful</span>${successful}</div>
         <div class="info-item"><span>Aborted/Failed</span>${data.filter(m=>['Aborted','Failed'].includes(m.outcome)).length}</div>
       </div>
       <div class="section-divider">6. COMMAND REMARKS</div>
-      <p style="font-size:13px;line-height:1.8">${remarks||'No command remarks for this period.'}</p>
+      <p style="font-size:13px;line-height:1.8">${remarks||'No command remarks.'}</p>
       <div style="margin-top:32px;border-top:1px solid var(--border);padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
-        <span>Generated: ${new Date().toLocaleString()}</span>
-        <span class="mono">NAF 115 SOG — MDMAS</span>
-        <span>RESTRICTED</span>
+        <span>Generated: ${new Date().toLocaleString()}</span><span class="mono">NAF 115 SOG — MDMAS</span><span>RESTRICTED</span>
       </div>
     </div>
-    <div class="btn-group" style="margin-top:12px">
-      <button class="btn btn-secondary" onclick="printReport()">🖨 PRINT</button>
-    </div>`;
-  await logAudit('REPORT_GENERATE', `Monthly report generated for ${monthName} ${year}`);
+    <div class="btn-group" style="margin-top:12px"><button class="btn btn-secondary" onclick="printReport()">🖨 PRINT</button></div>`;
+  await logAudit('REPORT_GENERATE',`Report generated for ${monthName} ${year}`);
 }
 
-function printReport() {
-  const area = document.getElementById('printArea');
-  if (!area) { notify('Generate a report first','warn'); return; }
-  const win = window.open('','_blank');
-  win.document.write(`<html><head><title>NAF 115 SOG Report</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-    <style>body{font-family:Rajdhani,sans-serif;background:#fff;color:#111;padding:32px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:8px;font-size:12px} .section-divider{font-weight:700;border-bottom:1px solid #333;margin:16px 0 8px;padding-bottom:4px} .badge-restricted{background:#b91c1c;color:#fff;padding:2px 8px;font-size:10px;letter-spacing:2px}</style>
-    </head><body>${area.innerHTML}</body></html>`);
-  win.document.close();
-  win.print();
+function printReport(){
+  const area=document.getElementById('printArea');if(!area){notify('Generate a report first','warn');return;}
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>NAF 115 SOG Report</title><link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/><style>body{font-family:Rajdhani,sans-serif;background:#fff;color:#111;padding:32px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;font-size:12px}.section-divider{font-weight:700;border-bottom:1px solid #333;margin:16px 0 8px}.badge-restricted{background:#b91c1c;color:#fff;padding:2px 8px;font-size:10px}</style></head><body>${area.innerHTML}</body></html>`);
+  win.document.close();win.print();
 }
 
-// ─── CREW ───
-function renderCrew() {
-  populateSelect('cRank', refData.ranks);
-  filterCrew();
+// ── CREW ──
+function renderCrew(){populateSelect('cRank',refData.ranks);filterCrew();}
+function filterCrew(){
+  const search=document.getElementById('crewSearch').value.toLowerCase(),status=document.getElementById('crewStatus').value;
+  const data=allCrew.filter(c=>{if(status&&c.status!==status)return false;if(search&&![c.name,c.serviceNumber,c.specialization,c.rank].join(' ').toLowerCase().includes(search))return false;return true;});
+  const tbl=document.getElementById('crewTbl');
+  tbl.innerHTML=data.length?data.map(c=>`<tr><td class="mono">${c.serviceNumber||'—'}</td><td>${c.rank||'—'}</td><td>${c.name||'—'}</td><td>${c.specialization||'—'}</td><td><span class="badge ${c.status==='Active'?'badge-success':'badge-gray'}">${c.status||'—'}</span></td><td class="mono">${(c.totalFlightHours||0).toFixed(1)}</td><td>${c.totalMissions||0}</td><td><button class="btn btn-secondary btn-sm" onclick="editCrewMember('${c.id}')">✏</button><button class="btn btn-danger btn-sm" onclick="deactivateCrew('${c.id}','${c.status}')">⊘</button></td></tr>`).join(''):`<tr><td colspan="8" class="empty-state">No crew records found</td></tr>`;
 }
-
-function filterCrew() {
-  const search = document.getElementById('crewSearch').value.toLowerCase();
-  const status = document.getElementById('crewStatus').value;
-  const data = allCrew.filter(c => {
-    if (status && c.status !== status) return false;
-    if (search && ![c.name,c.serviceNumber,c.specialization,c.rank].join(' ').toLowerCase().includes(search)) return false;
-    return true;
-  });
-  const tbl = document.getElementById('crewTbl');
-  tbl.innerHTML = data.length ? data.map(c => `
-    <tr>
-      <td class="mono">${c.serviceNumber||'—'}</td>
-      <td>${c.rank||'—'}</td>
-      <td>${c.name||'—'}</td>
-      <td>${c.specialization||'—'}</td>
-      <td><span class="badge ${c.status==='Active'?'badge-success':'badge-gray'}">${c.status||'—'}</span></td>
-      <td class="mono">${(c.totalFlightHours||0).toFixed(1)}</td>
-      <td>${c.totalMissions||0}</td>
-      <td>
-        <button class="btn btn-secondary btn-sm" onclick="editCrewMember('${c.id}')">✏</button>
-        <button class="btn btn-danger btn-sm" onclick="deactivateCrew('${c.id}','${c.status}')">⊘</button>
-      </td>
-    </tr>`).join('') : `<tr><td colspan="8" class="empty-state">No crew records found</td></tr>`;
-}
-
-function openCrewModal(id) {
-  editingCrewId = id || null;
-  document.getElementById('crewModalTitle').textContent = id ? 'Edit Crew Member' : 'Add Crew Member';
-  populateSelect('cRank', refData.ranks);
-  if (!id) { ['cSvcNo','cName','cSpec','cUnit','cQual','cJoined'].forEach(i => document.getElementById(i).value=''); document.getElementById('cStatus').value='Active'; }
+function openCrewModal(id){
+  editingCrewId=id||null;document.getElementById('crewModalTitle').textContent=id?'Edit Crew Member':'Add Crew Member';
+  populateSelect('cRank',refData.ranks);
+  if(!id){['cSvcNo','cName','cSpec','cUnit','cQual','cJoined'].forEach(i=>document.getElementById(i).value='');document.getElementById('cStatus').value='Active';}
   openModal('crewModal');
 }
-
-function editCrewMember(id) {
-  const c = allCrew.find(x => x.id === id);
-  if (!c) return;
-  openCrewModal(id);
-  setTimeout(() => {
-    document.getElementById('cSvcNo').value = c.serviceNumber||'';
-    document.getElementById('cRank').value = c.rank||'';
-    document.getElementById('cName').value = c.name||'';
-    document.getElementById('cSpec').value = c.specialization||'';
-    document.getElementById('cUnit').value = c.unit||'';
-    document.getElementById('cStatus').value = c.status||'Active';
-    document.getElementById('cJoined').value = c.dateJoined||'';
-    document.getElementById('cQual').value = c.qualifications||'';
-  }, 50);
-}
-
-async function saveCrew() {
-  const payload = {
-    serviceNumber: document.getElementById('cSvcNo').value,
-    rank: document.getElementById('cRank').value,
-    name: document.getElementById('cName').value,
-    specialization: document.getElementById('cSpec').value,
-    unit: document.getElementById('cUnit').value,
-    status: document.getElementById('cStatus').value,
-    dateJoined: document.getElementById('cJoined').value,
-    qualifications: document.getElementById('cQual').value,
-    updatedAt: serverTimestamp()
-  };
-  if (!payload.name || !payload.serviceNumber) { notify('Name and Service Number required','error'); return; }
+function editCrewMember(id){const c=allCrew.find(x=>x.id===id);if(!c)return;openCrewModal(id);setTimeout(()=>{document.getElementById('cSvcNo').value=c.serviceNumber||'';document.getElementById('cRank').value=c.rank||'';document.getElementById('cName').value=c.name||'';document.getElementById('cSpec').value=c.specialization||'';document.getElementById('cUnit').value=c.unit||'';document.getElementById('cStatus').value=c.status||'Active';document.getElementById('cJoined').value=c.dateJoined||'';document.getElementById('cQual').value=c.qualifications||'';},50);}
+async function saveCrew(){
+  const payload={serviceNumber:document.getElementById('cSvcNo').value,rank:document.getElementById('cRank').value,name:document.getElementById('cName').value,specialization:document.getElementById('cSpec').value,unit:document.getElementById('cUnit').value,status:document.getElementById('cStatus').value,dateJoined:document.getElementById('cJoined').value,qualifications:document.getElementById('cQual').value,updatedAt:serverTimestamp()};
+  if(!payload.name||!payload.serviceNumber){notify('Name and Service Number required','error');return;}
   showLoading('SAVING...');
-  if (editingCrewId) {
-    await updateDoc(doc(db,'crew',editingCrewId), payload);
-    notify('Crew member updated','success');
-  } else {
-    await addDoc(collection(db,'crew'), { ...payload, totalFlightHours:0, totalMissions:0, createdAt:serverTimestamp() });
-    notify('Crew member added','success');
-  }
-  await loadAllData();
-  closeModal('crewModal');
-  renderCrew();
-  hideLoading();
+  if(editingCrewId)await updateDoc(doc(db,'crew',editingCrewId),payload);
+  else await addDoc(collection(db,'crew'),{...payload,totalFlightHours:0,totalMissions:0,createdAt:serverTimestamp()});
+  await loadAllData();closeModal('crewModal');renderCrew();hideLoading();notify('Crew member saved','success');
+}
+async function deactivateCrew(id,current){const s=current==='Active'?'Inactive':'Active';await updateDoc(doc(db,'crew',id),{status:s});await loadAllData();filterCrew();notify(`Crew set to ${s}`,'warn');}
+
+// ── AIRCRAFT ──
+function renderAircraft(){populateSelect('acType',refData.aircraftTypes);filterAircraft();}
+function filterAircraft(){
+  const search=document.getElementById('acSearch').value.toLowerCase();
+  const data=allAircraft.filter(a=>!search||[a.tailNumber,a.aircraftType,a.squadron].join(' ').toLowerCase().includes(search));
+  const tbl=document.getElementById('aircraftTbl');
+  tbl.innerHTML=data.length?data.map(a=>`<tr><td class="mono">${a.tailNumber||'—'}</td><td>${a.aircraftType||'—'}</td><td><span class="badge ${a.status==='Active'?'badge-success':a.status==='Maintenance'?'badge-warn':'badge-gray'}">${a.status||'—'}</span></td><td>${a.squadron||'—'}</td><td class="mono">${(a.totalFlightHours||0).toFixed(1)}</td><td>${a.totalMissions||0}</td><td>${a.lastMissionDate||'—'}</td><td><span class="badge ${a.maintenanceStatus==='Serviceable'?'badge-success':a.maintenanceStatus==='Limited'?'badge-warn':'badge-danger'}">${a.maintenanceStatus||'—'}</span></td><td><button class="btn btn-secondary btn-sm" onclick="editAircraft('${a.id}')">✏</button></td></tr>`).join(''):`<tr><td colspan="9" class="empty-state">No aircraft records found</td></tr>`;
+}
+function openAcModal(){editingAcId=null;document.getElementById('acModalTitle').textContent='Add Aircraft';['acTail','acSqn'].forEach(i=>document.getElementById(i).value='');populateSelect('acType',refData.aircraftTypes);openModal('acModal');}
+function editAircraft(id){const a=allAircraft.find(x=>x.id===id);if(!a)return;editingAcId=id;document.getElementById('acModalTitle').textContent='Edit Aircraft';populateSelect('acType',refData.aircraftTypes);openModal('acModal');setTimeout(()=>{document.getElementById('acTail').value=a.tailNumber||'';document.getElementById('acType').value=a.aircraftType||'';document.getElementById('acStatus').value=a.status||'Active';document.getElementById('acSqn').value=a.squadron||'';document.getElementById('acMaint').value=a.maintenanceStatus||'Serviceable';document.getElementById('acInspect').value=a.nextInspectionDate||'';},50);}
+async function saveAircraft(){
+  const payload={tailNumber:document.getElementById('acTail').value.toUpperCase(),aircraftType:document.getElementById('acType').value,status:document.getElementById('acStatus').value,squadron:document.getElementById('acSqn').value,maintenanceStatus:document.getElementById('acMaint').value,nextInspectionDate:document.getElementById('acInspect').value,updatedAt:serverTimestamp()};
+  if(!payload.tailNumber){notify('Tail number required','error');return;}showLoading('SAVING...');
+  if(editingAcId)await updateDoc(doc(db,'aircraft',editingAcId),payload);
+  else await addDoc(collection(db,'aircraft'),{...payload,totalFlightHours:0,totalMissions:0,createdAt:serverTimestamp()});
+  await loadAllData();closeModal('acModal');renderAircraft();hideLoading();notify('Aircraft saved','success');
 }
 
-async function deactivateCrew(id, current) {
-  const newStatus = current === 'Active' ? 'Inactive' : 'Active';
-  await updateDoc(doc(db,'crew',id), { status: newStatus });
-  await loadAllData();
-  filterCrew();
-  notify(`Crew member set to ${newStatus}`,'warn');
+// ── USERS ──
+function renderUsers(){filterUsers();populateSelect('uRank',refData.ranks);}
+function filterUsers(){
+  const search=document.getElementById('userSearch').value.toLowerCase();
+  const data=allUsers.filter(u=>!search||[u.name,u.email,u.role].join(' ').toLowerCase().includes(search));
+  const tbl=document.getElementById('usersTbl');
+  tbl.innerHTML=data.length?data.map(u=>`<tr><td>${u.name||'—'}</td><td>${u.email||'—'}</td><td>${u.rank||'—'}</td><td><span class="badge badge-info">${roleLabel(u.role)}</span></td><td><span class="badge ${u.status==='Active'?'badge-success':'badge-gray'}">${u.status||'Active'}</span></td><td>${u.createdAt?.toDate?.()?.toLocaleDateString()||'—'}</td><td>${u.id!==currentUser.uid?`<button class="btn btn-danger btn-sm" onclick="disableUser('${u.id}','${u.status||'Active'}')">⊘</button>`:'<span class="text-muted">YOU</span>'}</td></tr>`).join(''):`<tr><td colspan="7" class="empty-state">No users found</td></tr>`;
 }
-
-// ─── AIRCRAFT ───
-function renderAircraft() {
-  populateSelect('acType', refData.aircraftTypes);
-  filterAircraft();
+function openUserModal(){document.getElementById('userModalTitle').textContent='Create User';['uName','uEmail','uPass'].forEach(i=>document.getElementById(i).value='');populateSelect('uRank',refData.ranks);openModal('userModal');}
+async function saveUser(){
+  const name=document.getElementById('uName').value.trim(),email=document.getElementById('uEmail').value.trim(),pass=document.getElementById('uPass').value,rank=document.getElementById('uRank').value,role=document.getElementById('uRole').value;
+  if(!name||!email||!pass){notify('All fields required','error');return;}showLoading('CREATING USER...');
+  try{const cred=await createUserWithEmailAndPassword(auth,email,pass);await setDoc(doc(db,'users',cred.user.uid),{name,email,rank,role,status:'Active',createdAt:serverTimestamp()});await loadAllData();renderUsers();closeModal('userModal');notify('User created','success');await logAudit('USER_CREATE',`User ${email} created`);}
+  catch(e){notify('Error: '+e.message,'error');}hideLoading();
 }
+async function disableUser(id,current){const s=current==='Active'?'Disabled':'Active';if(!confirm(`Set user to ${s}?`))return;await updateDoc(doc(db,'users',id),{status:s});await loadAllData();filterUsers();notify(`User ${s}`,'warn');}
 
-function filterAircraft() {
-  const search = document.getElementById('acSearch').value.toLowerCase();
-  const data = allAircraft.filter(a => !search || [a.tailNumber,a.aircraftType,a.squadron].join(' ').toLowerCase().includes(search));
-  const tbl = document.getElementById('aircraftTbl');
-  tbl.innerHTML = data.length ? data.map(a => `
-    <tr>
-      <td class="mono">${a.tailNumber||'—'}</td>
-      <td>${a.aircraftType||'—'}</td>
-      <td><span class="badge ${a.status==='Active'?'badge-success':a.status==='Maintenance'?'badge-warn':'badge-gray'}">${a.status||'—'}</span></td>
-      <td>${a.squadron||'—'}</td>
-      <td class="mono">${(a.totalFlightHours||0).toFixed(1)}</td>
-      <td>${a.totalMissions||0}</td>
-      <td>${a.lastMissionDate||'—'}</td>
-      <td><span class="badge ${a.maintenanceStatus==='Serviceable'?'badge-success':a.maintenanceStatus==='Limited'?'badge-warn':'badge-danger'}">${a.maintenanceStatus||'—'}</span></td>
-      <td><button class="btn btn-secondary btn-sm" onclick="editAircraft('${a.id}')">✏</button></td>
-    </tr>`).join('') : `<tr><td colspan="9" class="empty-state">No aircraft records found</td></tr>`;
+// ── AUDIT ──
+function renderAudit(){filterAudit();}
+function filterAudit(){
+  const search=document.getElementById('auditSearch').value.toLowerCase(),action=document.getElementById('auditAction').value;
+  filteredAudit=allAudit.filter(a=>{if(action&&a.action!==action)return false;if(search&&![a.userName,a.action,a.details].join(' ').toLowerCase().includes(search))return false;return true;});
+  auditPage=1;drawAudit();
 }
-
-function openAcModal() {
-  editingAcId = null;
-  document.getElementById('acModalTitle').textContent = 'Add Aircraft';
-  ['acTail','acSqn'].forEach(i => document.getElementById(i).value='');
-  populateSelect('acType', refData.aircraftTypes);
-  openModal('acModal');
+function drawAudit(){
+  const start=(auditPage-1)*auditPageSize,page=filteredAudit.slice(start,start+auditPageSize);
+  const tbl=document.getElementById('auditTbl');
+  tbl.innerHTML=page.length?page.map(a=>`<tr><td class="mono">${a.timestamp?.toDate?.()?.toLocaleString()||'—'}</td><td>${a.userName||'—'}</td><td><span class="badge badge-info">${a.action||'—'}</span></td><td>${a.details||'—'}</td></tr>`).join(''):`<tr><td colspan="4" class="empty-state">No audit logs</td></tr>`;
+  const total=Math.ceil(filteredAudit.length/auditPageSize),pg=document.getElementById('auditPagination');pg.innerHTML='';
+  if(total>1)for(let i=1;i<=total;i++){const b=document.createElement('button');b.className=`pg-btn ${i===auditPage?'active':''}`;b.textContent=i;b.onclick=()=>{auditPage=i;drawAudit();};pg.appendChild(b);}
 }
+async function logAudit(action,details){try{await addDoc(collection(db,'audit_logs'),{userId:currentUser?.uid,userName:currentUserData?.name||currentUser?.email,action,details,timestamp:serverTimestamp()});}catch(e){console.error('Audit log error:',e);}}
 
-function editAircraft(id) {
-  const a = allAircraft.find(x => x.id === id);
-  if (!a) return;
-  editingAcId = id;
-  document.getElementById('acModalTitle').textContent = 'Edit Aircraft';
-  populateSelect('acType', refData.aircraftTypes);
-  openModal('acModal');
-  setTimeout(() => {
-    document.getElementById('acTail').value = a.tailNumber||'';
-    document.getElementById('acType').value = a.aircraftType||'';
-    document.getElementById('acStatus').value = a.status||'Active';
-    document.getElementById('acSqn').value = a.squadron||'';
-    document.getElementById('acMaint').value = a.maintenanceStatus||'Serviceable';
-    document.getElementById('acInspect').value = a.nextInspectionDate||'';
-  }, 50);
+// ── SETTINGS ──
+async function renderSettings(){
+  const snap=await getDoc(doc(db,'settings','main')).catch(()=>null);
+  if(snap?.exists()){const s=snap.data();document.getElementById('sUnit').value=s.unitName||'115 Special Operations Group';document.getElementById('sCO').value=s.commandingOfficer||'';document.getElementById('sBase').value=s.baseLocation||'';document.getElementById('sClass').value=s.classificationLevel||'RESTRICTED';}
+  renderRefList('missionTypeList',refData.missionTypes,'missionTypes');renderRefList('aircraftTypeList',refData.aircraftTypes,'aircraftTypes');renderRefList('rankList',refData.ranks,'ranks');
 }
+function renderRefList(elId,items,key){document.getElementById(elId).innerHTML=items.map((item,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:1;font-size:13px">${item}</span><button class="btn btn-danger btn-sm" onclick="removeRefItem('${key}',${i},'${elId}')">✕</button></div>`).join('');}
+window.removeRefItem=async function(key,idx,elId){refData[key].splice(idx,1);await saveRefData();renderRefList(elId,refData[key],key);notify('Item removed','warn');};
+async function addRefItem(key,inputId,elId){const val=document.getElementById(inputId).value.trim();if(!val)return;if(refData[key].includes(val)){notify('Already exists','warn');return;}refData[key].push(val);await saveRefData();document.getElementById(inputId).value='';renderRefList(elId,refData[key],key);notify('Item added','success');}
+async function saveSettings(){await setDoc(doc(db,'settings','main'),{unitName:document.getElementById('sUnit').value,commandingOfficer:document.getElementById('sCO').value,baseLocation:document.getElementById('sBase').value,classificationLevel:document.getElementById('sClass').value,updatedAt:serverTimestamp()});notify('Settings saved','success');}
 
-async function saveAircraft() {
-  const payload = {
-    tailNumber: document.getElementById('acTail').value.toUpperCase(),
-    aircraftType: document.getElementById('acType').value,
-    status: document.getElementById('acStatus').value,
-    squadron: document.getElementById('acSqn').value,
-    maintenanceStatus: document.getElementById('acMaint').value,
-    nextInspectionDate: document.getElementById('acInspect').value,
-    updatedAt: serverTimestamp()
+// ── BULK IMPORT FUNCTIONS ──
+function handleImportFile(input){
+  const file=input.files[0];if(!file)return;
+  document.getElementById('importFileName').textContent=file.name;
+  if(typeof XLSX==='undefined'){notify('Excel library not loaded yet, try again.','error');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=new Uint8Array(e.target.result);
+      // raw:true + cellDates:false forces everything to come back as plain strings/numbers
+      // We handle date/time normalisation ourselves in normaliseDate() and normaliseHMM()
+      const wb=XLSX.read(data,{type:'array',cellDates:false,raw:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const json=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+      if(!json.length){notify('File appears empty','error');return;}
+      importRows=json;importHeaders=Object.keys(json[0]);
+      buildMapper();
+      document.getElementById('importMapper').style.display='block';
+      document.getElementById('importMapper').scrollIntoView({behavior:'smooth',block:'start'});
+      notify(`${json.length} rows loaded from "${file.name}"`, 'success');
+    }catch(err){notify('Could not read file: '+err.message,'error');console.error(err);}
   };
-  if (!payload.tailNumber) { notify('Tail number required','error'); return; }
-  showLoading('SAVING...');
-  if (editingAcId) {
-    await updateDoc(doc(db,'aircraft',editingAcId), payload);
-  } else {
-    await addDoc(collection(db,'aircraft'), { ...payload, totalFlightHours:0, totalMissions:0, createdAt:serverTimestamp() });
+  reader.onerror=()=>notify('File read failed','error');
+  reader.readAsArrayBuffer(file);
+}
+
+function buildMapper(){
+  const grid=document.getElementById('mapperGrid');
+  const headerHint=`<div style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:6px;border:1px solid var(--border);grid-column:1/-1">
+    <p style="font-size:11px;color:var(--warn);letter-spacing:1px;margin-bottom:6px">⚠ DETECTED COLUMNS IN YOUR FILE:</p>
+    <p style="font-size:12px;color:var(--muted);font-family:'Share Tech Mono',monospace;line-height:1.8">${importHeaders.join(' &nbsp;|&nbsp; ')}</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px">Select the matching column for each field. Required fields shown in <span style="color:var(--primary)">green</span>. Crew fields in <span style="color:var(--accent)">blue</span>.</p>
+  </div>`;
+  grid.innerHTML=headerHint+ALL_FIELD_MAP.map(f=>{
+    const isCrew=f.key.startsWith('crew');
+    const opts='<option value="">(skip)</option>'+importHeaders.map(h=>`<option value="${h}">${h}</option>`).join('');
+    return`<div class="fg"><label style="${f.required?'color:var(--primary)':isCrew?'color:var(--accent):':''}">${f.label}</label><select id="map_${f.key}" style="font-size:12px" onchange="renderImportPreview()">${opts}</select></div>`;
+  }).join('');
+  renderImportPreview();
+}
+
+function getMappings(){const m={};ALL_FIELD_MAP.forEach(f=>{const el=document.getElementById(`map_${f.key}`);m[f.key]=el?el.value:'';});return m;}
+
+function renderImportPreview(){
+  const m=getMappings(),visibleFields=FIELD_MAP.filter(f=>m[f.key]),preview=importRows.slice(0,5);
+  document.getElementById('importPreview').innerHTML=`
+    <div class="section-divider">PREVIEW — first ${preview.length} of ${importRows.length} rows</div>
+    <div class="tbl-wrap"><table><thead><tr>${visibleFields.map(f=>`<th>${f.label.replace(' *','')}</th>`).join('')}<th>Crew (mapped)</th></tr></thead>
+    <tbody>${preview.map(row=>{
+      const crewNames=Array.from({length:MAX_CREW},(_,i)=>{const col=m[`crew${i+1}_name`];return col&&row[col]?String(row[col]).trim():null;}).filter(Boolean).join(', ')||'—';
+      return`<tr>${visibleFields.map(f=>`<td style="font-size:12px">${row[m[f.key]]??''}</td>`).join('')}<td style="font-size:12px">${crewNames}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+async function runImport(){
+  const m=getMappings();
+  const missing=FIELD_MAP.filter(f=>f.required&&!m[f.key]);
+  if(missing.length){notify('Map required fields: '+missing.map(f=>f.label).join(', '),'error');return;}
+  const prog=document.getElementById('importProgress'),bar=document.getElementById('importBar'),stat=document.getElementById('importStatus');
+  prog.style.display='block';
+  let done=0,errors=0;
+  for(const row of importRows){
+    try{
+      const get=key=>m[key]?(row[m[key]]??''):'';
+      const dateStr=normaliseDate(get('date'));
+      const flightDisp=normaliseHMM(get('flightHoursDisplay'));
+      let missionNum=String(get('missionNumber')).trim();
+      if(!missionNum||missionNum.startsWith('Timestamp'))missionNum=`NAF115/IMP/${String(done+1).padStart(4,'0')}`;
+      let mType=String(get('missionType')).trim();
+      if(!mType||mType.includes('GMT')||mType.startsWith('Timestamp'))mType='Unspecified';
+      const crew=[];
+      for(let ci=1;ci<=MAX_CREW;ci++){
+        const nameCol=m[`crew${ci}_name`],rawName=nameCol?String(row[nameCol]||'').trim():'';
+        if(!rawName)continue;
+        crew.push({role:m[`crew${ci}_role`]?String(row[m[`crew${ci}_role`]]||'').trim():'',name:rawName,rank:m[`crew${ci}_rank`]?String(row[m[`crew${ci}_rank`]]||'').trim():'',serviceNumber:m[`crew${ci}_svc`]?String(row[m[`crew${ci}_svc`]]||'').trim():'',hoursFlown:normaliseHMM(m[`crew${ci}_hrs`]?row[m[`crew${ci}_hrs`]]:'')});
+      }
+      await addDoc(collection(db,'missions'),{
+        date:dateStr,missionNumber:missionNum,missionType:mType,
+        operationName:String(get('operationName')).trim(),areaOfOperation:String(get('areaOfOperation')).trim(),
+        classification:String(get('classification')).trim()||'RESTRICTED',priority:String(get('priority')).trim()||'ROUTINE',
+        aircraftType:String(get('aircraftType')).trim(),tailNumber:String(get('tailNumber')).trim(),
+        fuelUplift:+get('fuelUplift')||0,fuelRemaining:+get('fuelRemaining')||0,fuelConsumed:+get('fuelConsumed')||0,
+        sorties:+get('sorties')||1,flightHoursDisplay:flightDisp,flightHours:hmmToDecimal(flightDisp),
+        takeoffTime:String(get('takeoffTime')).trim(),landingTime:String(get('landingTime')).trim(),blockTime:+get('blockTime')||0,
+        outcome:String(get('outcome')).trim()||'Successful',remarks:String(get('remarks')).trim(),
+        crew,attachments:[],analystId:currentUser.uid,analystName:currentUserData?.name||currentUser.email,
+        importedAt:serverTimestamp(),createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+      });
+      // ── Update aircraft totals ──
+      const tailNum = String(get('tailNumber')).trim();
+      if(tailNum){
+        const acRef = allAircraft.find(a=>a.tailNumber.trim()===tailNum);
+        if(acRef){
+          await updateDoc(doc(db,'aircraft',acRef.id),{
+            totalFlightHours:(+acRef.totalFlightHours||0)+hmmToDecimal(flightDisp),
+            totalMissions:(+acRef.totalMissions||0)+1,
+            lastMissionDate:dateStr
+          });
+          acRef.totalFlightHours=(+acRef.totalFlightHours||0)+hmmToDecimal(flightDisp);
+          acRef.totalMissions=(+acRef.totalMissions||0)+1;
+        }
+      }
+      // ── Update crew totals (match by name only) ──
+      for(const c of crew){
+        const crewRef=allCrew.find(x=>x.name.trim().toLowerCase()===c.name.trim().toLowerCase());
+        if(crewRef){
+          const crewHrs=hmmToDecimal(c.hoursFlown||'0:00');
+          await updateDoc(doc(db,'crew',crewRef.id),{
+            totalFlightHours:(+crewRef.totalFlightHours||0)+crewHrs,
+            totalMissions:(+crewRef.totalMissions||0)+1
+          });
+          crewRef.totalFlightHours=(+crewRef.totalFlightHours||0)+crewHrs;
+          crewRef.totalMissions=(+crewRef.totalMissions||0)+1;
+        }
+      }
+      done++;
+    }catch(err){errors++;console.error('Row import error:',err,row);}
+    bar.style.width=Math.round(((done+errors)/importRows.length)*100)+'%';
+    stat.textContent=`Imported ${done} of ${importRows.length}${errors?' ('+errors+' errors)':''}...`;
   }
+  await logAudit('MISSION_IMPORT',`Bulk imported ${done} missions`);
   await loadAllData();
-  closeModal('acModal');
-  renderAircraft();
-  hideLoading();
-  notify('Aircraft saved','success');
+  notify(`Import complete: ${done} saved${errors?' | '+errors+' failed':''}`,done>0?'success':'error');
+  prog.style.display='none';bar.style.width='0%';cancelImport();
 }
 
-// ─── USERS ───
-function renderUsers() {
-  filterUsers();
-  populateSelect('uRank', refData.ranks);
+function cancelImport(){importRows=[];importHeaders=[];document.getElementById('importMapper').style.display='none';document.getElementById('importFile').value='';document.getElementById('importFileName').textContent='No file selected';document.getElementById('importPreview').innerHTML='';}
+
+function downloadTemplate(){
+  const mh=FIELD_MAP.map(f=>f.label.replace(' *',''));
+  const ch=Array.from({length:MAX_CREW},(_,i)=>[`Crew${i+1} Role`,`Crew${i+1} Name`,`Crew${i+1} Rank`,`Crew${i+1} Svc No`,`Crew${i+1} Hrs (H:MM)`]).flat();
+  const headers=[...mh,...ch];
+  const sample=[['2025-01-15','NAF115/2025/0001','Combat Air Patrol','Op Eagle','Northeast','RESTRICTED','ROUTINE','Alpha Jet','NAF475','3200','800','2400','2','1:45','07:30','09:15','1.8','Successful','Patrol completed.','Pilot','John Doe','Wing Commander','NAF/001','1:45','Navigator','Jane Smith','Squadron Leader','NAF/002','1:45','','','','','','','','','','','','','','','','','','','','']];
+  const ws=XLSX.utils.aoa_to_sheet([headers,...sample]);
+  ws['!cols']=headers.map(()=>({wch:22}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Missions');
+  XLSX.writeFile(wb,'NAF115_Mission_Import_Template.xlsx');
 }
 
-function filterUsers() {
-  const search = document.getElementById('userSearch').value.toLowerCase();
-  const data = allUsers.filter(u => !search || [u.name,u.email,u.role].join(' ').toLowerCase().includes(search));
-  const tbl = document.getElementById('usersTbl');
-  tbl.innerHTML = data.length ? data.map(u => `
-    <tr>
-      <td>${u.name||'—'}</td>
-      <td>${u.email||'—'}</td>
-      <td>${u.rank||'—'}</td>
-      <td><span class="badge badge-info">${roleLabel(u.role)}</span></td>
-      <td><span class="badge ${u.status==='Active'?'badge-success':'badge-gray'}">${u.status||'Active'}</span></td>
-      <td>${u.createdAt?.toDate?.()?.toLocaleDateString()||'—'}</td>
-      <td>
-        ${u.id!==currentUser.uid ? `<button class="btn btn-danger btn-sm" onclick="disableUser('${u.id}','${u.status||'Active'}')">⊘</button>` : '<span class="text-muted">YOU</span>'}
-      </td>
-    </tr>`).join('') : `<tr><td colspan="7" class="empty-state">No users found</td></tr>`;
-}
+// ── UTILS ──
+function outcomeBadge(o){const map={'Successful':'badge-success','Partially Successful':'badge-warn','Failed':'badge-danger','Aborted':'badge-gray'};return`<span class="badge ${map[o]||'badge-gray'}">${o||'—'}</span>`;}
+function canEdit(){return['super_admin','command_admin','analyst'].includes(currentRole);}
+function canDelete(){return['super_admin','command_admin'].includes(currentRole);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showLoading(msg){document.getElementById('loadingMsg').textContent=msg||'LOADING...';document.getElementById('loadingOverlay').classList.add('show');}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show');}
+function notify(msg,type='success'){const el=document.createElement('div');el.className=`notif-item ${type}`;el.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✕':'⚠'}</span><span>${msg}</span>`;document.getElementById('notif').appendChild(el);setTimeout(()=>el.remove(),4000);}
 
-function openUserModal() {
-  editingUserId = null;
-  document.getElementById('userModalTitle').textContent = 'Create User';
-  ['uName','uEmail','uPass'].forEach(i => document.getElementById(i).value='');
-  populateSelect('uRank', refData.ranks);
-  openModal('userModal');
-}
-
-async function saveUser() {
-  const name = document.getElementById('uName').value.trim();
-  const email = document.getElementById('uEmail').value.trim();
-  const pass = document.getElementById('uPass').value;
-  const rank = document.getElementById('uRank').value;
-  const role = document.getElementById('uRole').value;
-  if (!name || !email || !pass) { notify('All fields are required','error'); return; }
-  showLoading('CREATING USER...');
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await setDoc(doc(db,'users',cred.user.uid), {
-      name, email, rank, role, status:'Active', createdAt:serverTimestamp()
-    });
-    // Sign back in as current user — Note: in production use Admin SDK via Cloud Function
-    await loadAllData();
-    renderUsers();
-    closeModal('userModal');
-    notify('User created. Note: You may need to re-login.','warn');
-    await logAudit('USER_CREATE', `User ${email} created with role ${roleLabel(role)}`);
-  } catch(e) {
-    notify('Error: ' + e.message,'error');
-  }
-  hideLoading();
-}
-
-async function disableUser(id, current) {
-  const newStatus = current === 'Active' ? 'Disabled' : 'Active';
-  if (!confirm(`Set user to ${newStatus}?`)) return;
-  await updateDoc(doc(db,'users',id), { status: newStatus });
-  await loadAllData();
-  filterUsers();
-  notify(`User ${newStatus}`,'warn');
-}
-
-// ─── AUDIT ───
-function renderAudit() { filterAudit(); }
-
-function filterAudit() {
-  const search = document.getElementById('auditSearch').value.toLowerCase();
-  const action = document.getElementById('auditAction').value;
-  filteredAudit = allAudit.filter(a => {
-    if (action && a.action !== action) return false;
-    if (search && ![a.userName,a.action,a.details].join(' ').toLowerCase().includes(search)) return false;
-    return true;
-  });
-  auditPage = 1; drawAudit();
-}
-
-function drawAudit() {
-  const start = (auditPage-1)*auditPageSize;
-  const page = filteredAudit.slice(start, start+auditPageSize);
-  const tbl = document.getElementById('auditTbl');
-  tbl.innerHTML = page.length ? page.map(a => `
-    <tr>
-      <td class="mono">${a.timestamp?.toDate?.()?.toLocaleString()||'—'}</td>
-      <td>${a.userName||'—'}</td>
-      <td><span class="badge badge-info">${a.action||'—'}</span></td>
-      <td>${a.details||'—'}</td>
-    </tr>`).join('') : `<tr><td colspan="4" class="empty-state">No audit logs</td></tr>`;
-  const total = Math.ceil(filteredAudit.length/auditPageSize);
-  const pg = document.getElementById('auditPagination');
-  pg.innerHTML = '';
-  if (total > 1) for (let i=1;i<=total;i++) { const b=document.createElement('button'); b.className=`pg-btn ${i===auditPage?'active':''}`; b.textContent=i; b.onclick=()=>{auditPage=i;drawAudit()}; pg.appendChild(b); }
-}
-
-async function logAudit(action, details) {
-  try {
-    await addDoc(collection(db,'audit_logs'), {
-      userId: currentUser?.uid,
-      userName: currentUserData?.name || currentUser?.email,
-      action, details,
-      timestamp: serverTimestamp()
-    });
-  } catch(e) { console.error('Audit log error:', e); }
-}
-
-// ─── SETTINGS ───
-async function renderSettings() {
-  const snap = await getDoc(doc(db,'settings','main')).catch(()=>null);
-  if (snap?.exists()) {
-    const s = snap.data();
-    document.getElementById('sUnit').value = s.unitName||'115 Special Operations Group';
-    document.getElementById('sCO').value = s.commandingOfficer||'';
-    document.getElementById('sBase').value = s.baseLocation||'';
-    document.getElementById('sClass').value = s.classificationLevel||'RESTRICTED';
-  }
-  renderRefList('missionTypeList', refData.missionTypes, 'missionTypes');
-  renderRefList('aircraftTypeList', refData.aircraftTypes, 'aircraftTypes');
-  renderRefList('rankList', refData.ranks, 'ranks');
-}
-
-function renderRefList(elId, items, key) {
-  const el = document.getElementById(elId);
-  el.innerHTML = items.map((item,i) => `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <span style="flex:1;font-size:13px">${item}</span>
-      <button class="btn btn-danger btn-sm" onclick="removeRefItem('${key}',${i},'${elId}')">✕</button>
-    </div>`).join('');
-}
-
-window.removeRefItem = async function(key, idx, elId) {
-  refData[key].splice(idx, 1);
-  await saveRefData();
-  renderRefList(elId, refData[key], key);
-  notify('Item removed','warn');
-};
-
-async function addRefItem(key, inputId, elId) {
-  const val = document.getElementById(inputId).value.trim();
-  if (!val) return;
-  if (refData[key].includes(val)) { notify('Already exists','warn'); return; }
-  refData[key].push(val);
-  await saveRefData();
-  document.getElementById(inputId).value = '';
-  renderRefList(elId, refData[key], key);
-  notify('Item added','success');
-}
-
-async function saveSettings() {
-  await setDoc(doc(db,'settings','main'), {
-    unitName: document.getElementById('sUnit').value,
-    commandingOfficer: document.getElementById('sCO').value,
-    baseLocation: document.getElementById('sBase').value,
-    classificationLevel: document.getElementById('sClass').value,
-    updatedAt: serverTimestamp()
-  });
-  notify('Settings saved','success');
-}
-
-// ─── UTILS ───
-function outcomeBadge(o) {
-  const map = { 'Successful':'badge-success', 'Partially Successful':'badge-warn', 'Failed':'badge-danger', 'Aborted':'badge-gray' };
-  return `<span class="badge ${map[o]||'badge-gray'}">${o||'—'}</span>`;
-}
-
-function canEdit() { return ['super_admin','command_admin','analyst'].includes(currentRole); }
-function canDelete() { return ['super_admin','command_admin'].includes(currentRole); }
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function showLoading(msg) {
-  document.getElementById('loadingMsg').textContent = msg || 'LOADING...';
-  document.getElementById('loadingOverlay').classList.add('show');
-}
-function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
-
-function notify(msg, type='success') {
-  const el = document.createElement('div');
-  el.className = `notif-item ${type}`;
-  el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'⚠'}</span><span>${msg}</span>`;
-  document.getElementById('notif').appendChild(el);
-  setTimeout(() => el.remove(), 4000);
-}
-
-// Click outside modal to close
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+// ── EVENT LISTENERS ──
+document.getElementById('importFile').addEventListener('change',function(){handleImportFile(this);});
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 </script>
 </body>
 </html>
