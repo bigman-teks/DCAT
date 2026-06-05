@@ -140,7 +140,92 @@ tr:hover td{background:rgba(34,197,94,.04)}
 .info-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px}
 .info-item{font-size:13px}.info-item span{color:var(--muted);font-size:11px;display:block}
 .section-divider{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-@media(max-width:768px){#sidebar{width:60px}#topbar{left:60px}.tb-center{display:none}#mainContent{margin-left:60px}.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid{grid-template-columns:1fr}}
+/* ── MOBILE OVERLAY SIDEBAR ── */
+#sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199}
+#sidebarOverlay.show{display:block}
+.mob-menu-btn{display:none;background:none;border:none;color:var(--primary);font-size:24px;cursor:pointer;padding:0 4px}
+
+/* ── TABLET ── */
+@media(max-width:1024px){
+  .kpi-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .chart-grid{grid-template-columns:1fr 1fr}
+  .crew-row{grid-template-columns:100px 110px 1fr 1fr 90px 36px}
+}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  /* Sidebar becomes overlay drawer */
+  #sidebar{width:260px;left:-260px;transition:left .25s;z-index:200;box-shadow:4px 0 20px rgba(0,0,0,.5)}
+  #sidebar.mobile-open{left:0}
+  #sidebar.collapsed{width:260px;left:-260px}
+  #sidebar.collapsed.mobile-open{left:0}
+  #sidebar.collapsed .nav-item span{display:inline}
+  #sidebar.collapsed .sb-title{display:inline}
+
+  /* Topbar fills full width */
+  #topbar{left:0!important;padding:0 12px;gap:8px}
+  .tb-center{display:none}
+  .tb-brand{display:none}
+  .mob-menu-btn{display:block}
+
+  /* Main content full width */
+  #mainContent{margin-left:0!important;padding:12px}
+
+  /* KPI grid 2 cols */
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi-val{font-size:22px}
+  .kpi-icon{font-size:22px}
+
+  /* Charts single col */
+  .chart-grid{grid-template-columns:1fr}
+
+  /* Tables — card style on mobile */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:520px}
+
+  /* Forms */
+  .form-grid{grid-template-columns:1fr}
+  .form-grid-2{grid-template-columns:1fr}
+
+  /* Crew row stacked */
+  .crew-row{grid-template-columns:1fr 1fr;gap:6px}
+  .crew-row .cr-del{grid-column:span 2;width:100%}
+
+  /* Modals full screen */
+  .modal{max-width:100%;margin:0;border-radius:0;min-height:100vh}
+  .modal-overlay{padding:0;align-items:flex-start}
+
+  /* Topbar right — compact */
+  .tb-right{gap:8px;font-size:11px}
+  .tb-user .name{font-size:12px}
+  .tb-user .role{display:none}
+  .tb-clock{font-size:11px}
+
+  /* Page title smaller */
+  .page-title{font-size:16px}
+  .page-sub{font-size:10px;margin-bottom:14px}
+
+  /* Buttons wrap */
+  .btn-group{gap:6px}
+  .btn{font-size:12px;padding:7px 12px}
+
+  /* Search bar stack */
+  .search-bar{flex-direction:column;align-items:stretch}
+  .search-bar input,.search-bar select,.search-bar button{width:100%}
+
+  /* Card padding smaller */
+  .card{padding:14px}
+  .card-title{font-size:13px}
+
+  /* Import mapper full width */
+  #mapperGrid{grid-template-columns:1fr}
+}
+
+/* ── SMALL PHONE ── */
+@media(max-width:400px){
+  .kpi-grid{grid-template-columns:1fr}
+  .tb-right{gap:4px}
+}
 </style>
 </head>
 <body>
@@ -347,22 +432,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <select id="crewStatus" onchange="filterCrew()"><option value="">All Status</option><option>Active</option><option>Inactive</option></select>
           <button class="btn btn-primary btn-sm" onclick="openCrewModal()">+ ADD CREW</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Svc No.</th>
-                <th>Rank</th>
-                <th>Name</th>
-                <th>Specialization</th>
-                <th>Status</th>
-                <th>Total Hrs</th>
-                <th>Total Missions</th>
-                <th>Actions</th></tr>
-              </thead>
-              <tbody id="crewTbl"></tbody>
-            </table>
-          </div>
+        <div class="tbl-wrap"><table><thead><tr><th>Svc No.</th><th>Rank</th><th>Name</th><th>Specialization</th><th>Status</th><th>Total Hrs</th><th>Total Missions</th><th>Actions</th></tr></thead><tbody id="crewTbl"></tbody></table></div>
       </div>
     </div>
 
@@ -374,22 +444,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <input type="text" id="acSearch" placeholder="Search aircraft..." oninput="filterAircraft()" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/>
           <button class="btn btn-primary btn-sm" onclick="openAcModal()">+ ADD AIRCRAFT</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-            <tr><th>Tail No.</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Squadron</th>
-              <th>Total Hrs</th>
-              <th>Total Missions</th>
-              <th>Last Mission</th>
-              <th>Maint. Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="aircraftTbl"></tbody>
-        </table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Tail No.</th><th>Type</th><th>Status</th><th>Squadron</th><th>Total Hrs</th><th>Total Missions</th><th>Last Mission</th><th>Maint. Status</th><th>Actions</th></tr></thead><tbody id="aircraftTbl"></tbody></table></div>
       </div>
     </div>
 
@@ -463,8 +518,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
     <div class="fg"><label>Status</label><select id="cStatus"><option>Active</option><option>Inactive</option></select></div>
     <div class="fg"><label>Date Joined</label><input type="date" id="cJoined"/></div>
     <div class="fg"><label>Qualifications</label><input type="text" id="cQual" placeholder="e.g. QFI, IP"/></div>
-  </div>
-  <div class="btn-group"><button class="btn btn-primary" onclick="saveCrew()">💾 SAVE</button><button class="btn btn-secondary" onclick="closeModal('crewModal')">CANCEL</button></div></div></div></div>
+  </div><div class="btn-group"><button class="btn btn-primary" onclick="saveCrew()">💾 SAVE</button><button class="btn btn-secondary" onclick="closeModal('crewModal')">CANCEL</button></div></div></div></div>
 <div class="modal-overlay" id="acModal"><div class="modal"><div class="modal-header"><h2 id="acModalTitle">Add Aircraft</h2><button class="modal-close" onclick="closeModal('acModal')">✕</button></div>
   <div class="modal-body"><div class="form-grid">
     <div class="fg"><label>Tail Number *</label><input type="text" id="acTail"/></div>
