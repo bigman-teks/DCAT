@@ -140,91 +140,103 @@ tr:hover td{background:rgba(34,197,94,.04)}
 .info-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px}
 .info-item{font-size:13px}.info-item span{color:var(--muted);font-size:11px;display:block}
 .section-divider{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-/* ── MOBILE OVERLAY SIDEBAR ── */
+/* ── MOBILE OVERLAY ── */
 #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199}
 #sidebarOverlay.show{display:block}
-.mob-menu-btn{display:none;background:none;border:none;color:var(--primary);font-size:24px;cursor:pointer;padding:0 4px}
+.mob-menu-btn{display:none;background:none;border:none;color:var(--primary);font-size:26px;cursor:pointer;padding:0 6px;line-height:1}
+
+/* ── BOTTOM NAV (mobile) ── */
+#bottomNav{display:none;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--panel);border-top:1px solid var(--border);z-index:300;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+#bottomNav .bn-inner{display:flex;align-items:stretch;height:100%;min-width:max-content}
+#bottomNav .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 14px;cursor:pointer;color:var(--muted);font-size:10px;letter-spacing:.5px;white-space:nowrap;border-bottom:3px solid transparent;transition:all .15s;min-width:60px}
+#bottomNav .bn-item .bn-icon{font-size:20px;line-height:1}
+#bottomNav .bn-item.active{color:var(--primary);border-bottom-color:var(--primary)}
+#bottomNav .bn-item:hover{color:var(--text)}
 
 /* ── TABLET ── */
 @media(max-width:1024px){
   .kpi-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
   .chart-grid{grid-template-columns:1fr 1fr}
-  .crew-row{grid-template-columns:100px 110px 1fr 1fr 90px 36px}
 }
 
-/* ── MOBILE ── */
+/* ── MOBILE & TABLET ── */
 @media(max-width:768px){
-  /* Sidebar becomes overlay drawer */
-  #sidebar{width:260px;left:-260px;transition:left .25s;z-index:200;box-shadow:4px 0 20px rgba(0,0,0,.5)}
-  #sidebar.mobile-open{left:0}
-  #sidebar.collapsed{width:260px;left:-260px}
+  /* Sidebar slides off-screen; hamburger opens it as drawer */
+  #sidebar{width:260px;left:-270px;transition:left .28s cubic-bezier(.4,0,.2,1);z-index:200;box-shadow:none}
+  #sidebar.mobile-open{left:0;box-shadow:6px 0 24px rgba(0,0,0,.6)}
+  #sidebar.collapsed{width:260px;left:-270px}
   #sidebar.collapsed.mobile-open{left:0}
   #sidebar.collapsed .nav-item span{display:inline}
   #sidebar.collapsed .sb-title{display:inline}
 
-  /* Topbar fills full width */
-  #topbar{left:0!important;padding:0 12px;gap:8px}
+  /* Topbar full width */
+  #topbar{left:0!important;padding:0 10px;gap:8px}
   .tb-center{display:none}
   .tb-brand{display:none}
-  .mob-menu-btn{display:block}
+  .mob-menu-btn{display:flex;align-items:center}
 
-  /* Main content full width */
-  #mainContent{margin-left:0!important;padding:12px}
+  /* Main content — no left margin, bottom padding for bottom nav */
+  #mainContent{margin-left:0!important;padding:12px 10px 76px}
 
-  /* KPI grid 2 cols */
+  /* Bottom nav visible */
+  #bottomNav{display:flex}
+
+  /* KPI 2-col */
   .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .kpi-val{font-size:22px}
-  .kpi-icon{font-size:22px}
+  .kpi-val{font-size:20px}.kpi-icon{font-size:20px}.kpi-label{font-size:10px}
 
-  /* Charts single col */
+  /* Charts 1-col */
   .chart-grid{grid-template-columns:1fr}
 
-  /* Tables — card style on mobile */
+  /* Tables scrollable */
   .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:520px}
+  table{min-width:480px}
 
   /* Forms */
   .form-grid{grid-template-columns:1fr}
   .form-grid-2{grid-template-columns:1fr}
 
-  /* Crew row stacked */
+  /* Crew row 2-col */
   .crew-row{grid-template-columns:1fr 1fr;gap:6px}
   .crew-row .cr-del{grid-column:span 2;width:100%}
 
   /* Modals full screen */
-  .modal{max-width:100%;margin:0;border-radius:0;min-height:100vh}
+  .modal{max-width:100%;border-radius:0;min-height:100vh;border-left:none;border-right:none}
   .modal-overlay{padding:0;align-items:flex-start}
 
-  /* Topbar right — compact */
-  .tb-right{gap:8px;font-size:11px}
-  .tb-user .name{font-size:12px}
-  .tb-user .role{display:none}
+  /* Topbar compact */
+  .tb-right{gap:6px;font-size:11px}
+  .tb-user .name{font-size:11px}.tb-user .role{display:none}
   .tb-clock{font-size:11px}
+  .badge-restricted{display:none}
 
-  /* Page title smaller */
-  .page-title{font-size:16px}
-  .page-sub{font-size:10px;margin-bottom:14px}
+  /* Page titles */
+  .page-title{font-size:16px;letter-spacing:1px}
+  .page-sub{font-size:10px;margin-bottom:12px}
 
-  /* Buttons wrap */
-  .btn-group{gap:6px}
-  .btn{font-size:12px;padding:7px 12px}
+  /* Buttons */
+  .btn-group{gap:6px}.btn{font-size:12px;padding:7px 12px}
+  .btn-sm{font-size:11px;padding:5px 8px}
 
   /* Search bar stack */
   .search-bar{flex-direction:column;align-items:stretch}
-  .search-bar input,.search-bar select,.search-bar button{width:100%}
+  .search-bar input,.search-bar select,.search-bar .btn{width:100%;min-width:unset}
 
-  /* Card padding smaller */
-  .card{padding:14px}
-  .card-title{font-size:13px}
+  /* Cards */
+  .card{padding:12px}.card-title{font-size:12px}
 
-  /* Import mapper full width */
+  /* Import mapper */
   #mapperGrid{grid-template-columns:1fr}
+
+  /* Section divider smaller */
+  .section-divider{font-size:10px;margin:12px 0 8px}
 }
 
 /* ── SMALL PHONE ── */
 @media(max-width:400px){
-  .kpi-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
   .tb-right{gap:4px}
+  #bottomNav .bn-item{padding:0 10px;min-width:54px}
 }
 </style>
 </head>
@@ -256,6 +268,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
     <nav id="navMenu"></nav>
   </nav>
   <header id="topbar">
+    <button class="mob-menu-btn" onclick="toggleMobileNav()" id="mobMenuBtn">☰</button>
     <div class="tb-brand"><span class="mono" style="color:var(--primary)">NAF 115 SOG</span></div>
     <div class="tb-center">MISSION DATA MANAGEMENT & ANALYSIS SYSTEM</div>
     <div class="tb-right">
@@ -411,13 +424,27 @@ tr:hover td{background:rgba(34,197,94,.04)}
 
     <!-- MONTHLY REPORTS -->
     <div class="page" id="pageReports">
-      <div class="page-title">MONTHLY REPORTS</div><div class="page-sub mono">COMMAND-LEVEL OPERATIONAL REPORTS</div>
+      <div class="page-title">MISSION REPORTS</div><div class="page-sub mono">COMMAND-LEVEL OPERATIONAL REPORTS</div>
       <div class="card">
-        <div class="form-grid-2">
-          <div class="fg"><label>Report Month</label><select id="repMonth"><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
-          <div class="fg"><label>Report Year</label><input type="number" id="repYear" value="2025"/></div>
+        <div class="form-grid">
+          <div class="fg"><label>Report Type</label>
+            <select id="repType" onchange="toggleRepType()">
+              <option value="monthly">Monthly Report</option>
+              <option value="range">Date Range Report</option>
+            </select>
+          </div>
         </div>
-        <div class="fg"><label>Command Remarks</label><textarea id="repRemarks" rows="3" placeholder="Enter command remarks..."></textarea></div>
+        <!-- Monthly selectors -->
+        <div id="repMonthlyFields" class="form-grid">
+          <div class="fg"><label>Month</label><select id="repMonth"><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+          <div class="fg"><label>Year</label><input type="number" id="repYear" value="2025"/></div>
+        </div>
+        <!-- Date range selectors -->
+        <div id="repRangeFields" class="form-grid" style="display:none">
+          <div class="fg"><label>From Date *</label><input type="date" id="repFrom"/></div>
+          <div class="fg"><label>To Date *</label><input type="date" id="repTo"/></div>
+        </div>
+        <div class="fg" style="margin-top:8px"><label>Command Remarks</label><textarea id="repRemarks" rows="3" placeholder="Enter command remarks..."></textarea></div>
         <div class="btn-group"><button class="btn btn-primary" onclick="generateReport()">📄 GENERATE REPORT</button><button class="btn btn-secondary" onclick="printReport()">🖨 PRINT</button></div>
       </div>
       <div id="reportOutput"></div>
@@ -537,6 +564,9 @@ tr:hover td{background:rgba(34,197,94,.04)}
     <div class="fg"><label>Temporary Password *</label><input type="password" id="uPass"/></div>
   </div><div class="btn-group"><button class="btn btn-primary" onclick="saveUser()">💾 CREATE USER</button><button class="btn btn-secondary" onclick="closeModal('userModal')">CANCEL</button></div></div></div></div>
 
+<div id="sidebarOverlay" onclick="closeMobileNav()"></div>
+<div id="bottomNav"><div class="bn-inner" id="bottomNavInner"></div></div>
+
 <div id="notif"></div>
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner" style="width:40px;height:40px;border-width:3px"></div><p id="loadingMsg">LOADING...</p></div>
 
@@ -570,7 +600,25 @@ let auditPage=1, auditPageSize=20, filteredAudit=[];
 let editingMissionId=null, editingCrewId=null, editingAcId=null;
 let charts={};
 
-// ── EXPOSE TO WINDOW ──
+// ── MOBILE NAV ──
+window.toggleMobileNav = toggleMobileNav;
+window.closeMobileNav = closeMobileNav;
+window.toggleRepType = toggleRepType;
+
+function toggleMobileNav(){
+  const sb=document.getElementById('sidebar'),ov=document.getElementById('sidebarOverlay');
+  sb.classList.toggle('mobile-open');
+  ov.classList.toggle('show');
+}
+function closeMobileNav(){
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+function toggleRepType(){
+  const t=document.getElementById('repType').value;
+  document.getElementById('repMonthlyFields').style.display=t==='monthly'?'grid':'none';
+  document.getElementById('repRangeFields').style.display=t==='range'?'grid':'none';
+}
 Object.assign(window,{
   togglePw,showForgot,doLogin,toggleSidebar,navigate,
   addCrewRow,saveMission,clearMissionForm,filterRecords,exportCSV,exportExcel,
@@ -690,18 +738,29 @@ const navItems=[
 
 function buildNav(){
   const nav=document.getElementById('navMenu');nav.innerHTML='';
-  navItems.filter(n=>n.roles.includes(currentRole)).forEach(n=>{
+  const bn=document.getElementById('bottomNavInner');bn.innerHTML='';
+  const visible=navItems.filter(n=>n.roles.includes(currentRole));
+  visible.forEach(n=>{
+    // Sidebar item
     const d=document.createElement('div');d.className='nav-item';d.dataset.id=n.id;
     d.innerHTML=`<span class="ni">${n.icon}</span><span>${n.label}</span>`;
-    d.onclick=()=>navigate(n.id);nav.appendChild(d);
+    d.onclick=()=>{navigate(n.id);closeMobileNav();};nav.appendChild(d);
+    // Bottom nav item (show first 5 only to avoid overflow)
+    const b=document.createElement('div');b.className='bn-item';b.dataset.id=n.id;
+    b.innerHTML=`<span class="bn-icon">${n.icon}</span><span>${n.label.split(' ')[0]}</span>`;
+    b.onclick=()=>{navigate(n.id);closeMobileNav();};bn.appendChild(b);
   });
+  // Logout in sidebar
   const lo=document.createElement('div');lo.className='nav-item';lo.innerHTML=`<span class="ni">🚪</span><span>Logout</span>`;lo.onclick=doLogout;nav.appendChild(lo);
+  // Logout in bottom nav
+  const lob=document.createElement('div');lob.className='bn-item';lob.innerHTML=`<span class="bn-icon">🚪</span><span>Logout</span>`;lob.onclick=doLogout;bn.appendChild(lob);
 }
 
 async function doLogout(){await logAudit('LOGOUT','User logged out');await signOut(auth);}
 
 function navigate(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
+  document.querySelectorAll('.bn-item').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg={dashboard:'pageDashboard',missionEntry:'pageMissionEntry',missionRecords:'pageMissionRecords',analysis:'pageAnalysis',reports:'pageReports',crew:'pageCrew',aircraft:'pageAircraft',users:'pageUsers',audit:'pageAudit',settings:'pageSettings'}[id];
   if(pg)document.getElementById(pg).classList.add('active');
@@ -1077,48 +1136,75 @@ function loadAnalysis(){
 
 // ── REPORTS ──
 async function generateReport(){
-  const month=document.getElementById('repMonth').value,year=document.getElementById('repYear').value,remarks=document.getElementById('repRemarks').value;
-  const ym=`${year}-${month}`,data=allMissions.filter(m=>(m.date||'').startsWith(ym));
+  const repType=document.getElementById('repType').value;
+  const remarks=document.getElementById('repRemarks').value;
   const settings=await getDoc(doc(db,'settings','main')).then(d=>d.exists()?d.data():{}).catch(()=>({}));
+  let data=[], periodLabel='';
+
+  if(repType==='monthly'){
+    const month=document.getElementById('repMonth').value;
+    const year=document.getElementById('repYear').value;
+    const ym=`${year}-${month}`;
+    data=allMissions.filter(m=>(m.date||'').startsWith(ym));
+    periodLabel=new Date(year,+month-1,1).toLocaleString('default',{month:'long'})+' '+year;
+  } else {
+    const from=document.getElementById('repFrom').value;
+    const to=document.getElementById('repTo').value;
+    if(!from||!to){notify('Please select From and To dates','error');return;}
+    if(from>to){notify('From date must be before To date','error');return;}
+    data=allMissions.filter(m=>m.date&&m.date>=from&&m.date<=to);
+    periodLabel=`${from} TO ${to}`;
+  }
+
   const totalSorties=data.reduce((s,m)=>s+(+m.sorties||0),0);
   const totalHrs=decimalToHmm(data.reduce((s,m)=>s+(+m.flightHours||0),0));
   const totalFuel=data.reduce((s,m)=>s+(+m.fuelConsumed||0),0).toLocaleString();
   const successful=data.filter(m=>m.outcome==='Successful').length;
-  const monthName=new Date(year,+month-1,1).toLocaleString('default',{month:'long'});
+
   const typeRows=refData.missionTypes.map(t=>{const ms=data.filter(m=>m.missionType===t);if(!ms.length)return'';return`<tr><td>${t}</td><td>${ms.length}</td><td>${ms.reduce((s,m)=>s+(+m.sorties||0),0)}</td><td>${decimalToHmm(ms.reduce((s,m)=>s+(+m.flightHours||0),0))}</td></tr>`;}).join('');
   const acRows=allAircraft.map(a=>{const ms=data.filter(m=>m.tailNumber===a.tailNumber);if(!ms.length)return'';return`<tr><td>${a.tailNumber}</td><td>${a.aircraftType}</td><td>${ms.length}</td><td>${decimalToHmm(ms.reduce((s,m)=>s+(+m.flightHours||0),0))}</td><td>${ms.reduce((s,m)=>s+(+m.fuelConsumed||0),0).toLocaleString()}</td></tr>`;}).join('');
+
+  // Crew performance table
+  const crewMap={};
+  data.forEach(m=>(m.crew||[]).forEach(c=>{if(!c.name)return;if(!crewMap[c.name])crewMap[c.name]={rank:c.rank,missions:0,hrs:0};crewMap[c.name].missions++;crewMap[c.name].hrs+=hmmToDecimal(c.hoursFlown||'0:00');}));
+  const crewRows=Object.entries(crewMap).sort((a,b)=>b[1].hrs-a[1].hrs).map(([name,v])=>`<tr><td>${v.rank||'—'}</td><td>${name}</td><td>${v.missions}</td><td>${decimalToHmm(v.hrs)}</td></tr>`).join('');
+
   document.getElementById('reportOutput').innerHTML=`
-    <div id="printArea" style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:32px;margin-top:16px">
-      <div style="text-align:center;border-bottom:2px solid var(--primary);padding-bottom:20px;margin-bottom:24px">
-        <div style="font-size:32px;color:var(--primary)">✈</div>
-        <h1 style="font-size:20px;letter-spacing:3px;color:var(--primary)">NIGERIAN AIR FORCE</h1>
-        <h2 style="font-size:14px;letter-spacing:2px">115 SPECIAL OPERATIONS GROUP</h2>
-        <h3 style="font-size:12px;color:var(--muted)">MONTHLY MISSION ANALYSIS REPORT</h3>
-        <div style="margin-top:8px"><span class="badge-restricted">RESTRICTED</span></div>
-        <p style="margin-top:8px;font-size:13px;color:var(--muted)" class="mono">PERIOD: ${monthName.toUpperCase()} ${year}</p>
+    <div id="printArea" style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:28px;margin-top:16px">
+      <div style="text-align:center;border-bottom:2px solid var(--primary);padding-bottom:16px;margin-bottom:20px">
+        <div style="font-size:28px;color:var(--primary)">✈</div>
+        <h1 style="font-size:18px;letter-spacing:3px;color:var(--primary)">NIGERIAN AIR FORCE</h1>
+        <h2 style="font-size:13px;letter-spacing:2px">115 SPECIAL OPERATIONS GROUP</h2>
+        <h3 style="font-size:11px;color:var(--muted)">MISSION ANALYSIS REPORT</h3>
+        <div style="margin-top:6px"><span class="badge-restricted">RESTRICTED</span></div>
+        <p style="margin-top:6px;font-size:12px;color:var(--muted)" class="mono">PERIOD: ${periodLabel.toUpperCase()}</p>
       </div>
       <div class="section-divider">1. EXECUTIVE SUMMARY</div>
-      <p style="font-size:13px;line-height:1.8">${settings.unitName||'115 Special Operations Group'} conducted <strong>${data.length}</strong> missions, <strong>${totalSorties}</strong> sorties, <strong>${totalHrs}</strong> flight hours. Success rate: <strong>${data.length?Math.round(successful/data.length*100):0}%</strong>.</p>
+      <p style="font-size:13px;line-height:1.8">${settings.unitName||'115 Special Operations Group'} conducted <strong>${data.length}</strong> missions comprising <strong>${totalSorties}</strong> sorties with <strong>${totalHrs}</strong> flight hours. Mission success rate: <strong>${data.length?Math.round(successful/data.length*100):0}%</strong>.</p>
       <div class="section-divider">2. MISSION BREAKDOWN</div>
       <div class="tbl-wrap"><table><thead><tr><th>Mission Type</th><th>Missions</th><th>Sorties</th><th>Flight Hrs</th></tr></thead><tbody>${typeRows||'<tr><td colspan="4">No data</td></tr>'}</tbody></table></div>
       <div class="section-divider">3. AIRCRAFT UTILIZATION</div>
       <div class="tbl-wrap"><table><thead><tr><th>Tail No.</th><th>Type</th><th>Missions</th><th>Flight Hrs</th><th>Fuel (L)</th></tr></thead><tbody>${acRows||'<tr><td colspan="5">No data</td></tr>'}</tbody></table></div>
-      <div class="section-divider">4. FUEL ANALYSIS</div>
+      <div class="section-divider">4. CREW PERFORMANCE</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Rank</th><th>Name</th><th>Missions</th><th>Flight Hrs</th></tr></thead><tbody>${crewRows||'<tr><td colspan="4">No crew data</td></tr>'}</tbody></table></div>
+      <div class="section-divider">5. FUEL ANALYSIS</div>
       <div class="info-row"><div class="info-item"><span>Total Fuel</span>${totalFuel} L</div><div class="info-item"><span>Avg/Mission</span>${data.length?(data.reduce((s,m)=>s+(+m.fuelConsumed||0),0)/data.length).toFixed(0):0} L</div></div>
-      <div class="section-divider">5. OPERATIONAL HIGHLIGHTS</div>
+      <div class="section-divider">6. OPERATIONAL HIGHLIGHTS</div>
       <div class="info-row">
-        <div class="info-item"><span>Total Missions</span>${data.length}</div><div class="info-item"><span>Total Sorties</span>${totalSorties}</div>
-        <div class="info-item"><span>Flight Hours</span>${totalHrs}</div><div class="info-item"><span>Successful</span>${successful}</div>
+        <div class="info-item"><span>Total Missions</span>${data.length}</div>
+        <div class="info-item"><span>Total Sorties</span>${totalSorties}</div>
+        <div class="info-item"><span>Flight Hours</span>${totalHrs}</div>
+        <div class="info-item"><span>Successful</span>${successful}</div>
         <div class="info-item"><span>Aborted/Failed</span>${data.filter(m=>['Aborted','Failed'].includes(m.outcome)).length}</div>
       </div>
-      <div class="section-divider">6. COMMAND REMARKS</div>
+      <div class="section-divider">7. COMMAND REMARKS</div>
       <p style="font-size:13px;line-height:1.8">${remarks||'No command remarks.'}</p>
-      <div style="margin-top:32px;border-top:1px solid var(--border);padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+      <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:12px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted);flex-wrap:wrap;gap:6px">
         <span>Generated: ${new Date().toLocaleString()}</span><span class="mono">NAF 115 SOG — MDMAS</span><span>RESTRICTED</span>
       </div>
     </div>
     <div class="btn-group" style="margin-top:12px"><button class="btn btn-secondary" onclick="printReport()">🖨 PRINT</button></div>`;
-  await logAudit('REPORT_GENERATE',`Report generated for ${monthName} ${year}`);
+  await logAudit('REPORT_GENERATE',`Report generated for ${periodLabel}`);
 }
 
 function printReport(){
