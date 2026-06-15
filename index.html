@@ -344,7 +344,6 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <div class="fg"><label>Mission Date *</label><input type="date" id="mDate"/></div>
           <div class="fg"><label>Mission Number</label><input type="text" id="mNumber" readonly placeholder="Auto-generated"/></div>
           <div class="fg"><label>Mission Type *</label><select id="mType"><option value="">Select...</option></select></div>
-          <div class="fg"><label>Operation Name</label><input type="text" id="mOpName"/></div>
           <div class="fg"><label>Area of Operation</label><input type="text" id="mArea"/></div>
           <div class="fg"><label>Classification Level</label><select id="mClass"><option>RESTRICTED</option><option>CONFIDENTIAL</option><option>SECRET</option></select></div>
           <div class="fg"><label>Mission Priority</label><select id="mPriority"><option>ROUTINE</option><option>PRIORITY</option><option>IMMEDIATE</option><option>FLASH</option></select></div>
@@ -354,8 +353,6 @@ tr:hover td{background:rgba(34,197,94,.04)}
         <div class="form-grid">
           <div class="fg"><label>Aircraft Type *</label><select id="mAcType"><option value="">Select...</option></select></div>
           <div class="fg"><label>Tail Number *</label><select id="mTail"><option value="">Select...</option></select></div>
-          <div class="fg"><label>Fuel Uplift (L)</label><input type="number" id="mFuelUp"/></div>
-          <div class="fg"><label>Fuel Remaining (L)</label><input type="number" id="mFuelRem"/></div>
           <div class="fg"><label>Fuel Consumed (L)</label><input type="number" id="mFuelCon"/></div>
         </div>
       </div>
@@ -529,7 +526,22 @@ tr:hover td{background:rgba(34,197,94,.04)}
             <div id="aircraftTypeList" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:8px"><input type="text" id="newAcType" placeholder="Add aircraft type..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/><button class="btn btn-primary btn-sm" onclick="addRefItem('aircraftTypes','newAcType','aircraftTypeList')">+</button></div>
           </div>
-          <div class="card"><div class="card-title">Ranks</div>
+        <div class="card" style="border-color:var(--accent)">
+            <div class="card-title" style="color:var(--accent)">📊 GOOGLE SHEETS BACKUP</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Every mission saved or imported will automatically be backed up to your Google Sheet.</p>
+            <div class="fg"><label>Apps Script Web App URL</label><input type="text" id="sheetsUrl" placeholder="https://script.google.com/macros/s/YOUR_ID/exec"/></div>
+            <div class="fg"><label>Google Sheet ID</label><input type="text" id="sheetsId" placeholder="From your Sheet URL — the long ID string"/></div>
+            <div class="fg" style="display:flex;align-items:center;gap:10px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text);font-size:13px">
+                <input type="checkbox" id="sheetsEnabled"/> Enable Sheets Backup
+              </label>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-sm" onclick="saveSheetConfig()" style="border-color:var(--accent);color:var(--accent)">💾 SAVE CONFIG</button>
+              <button class="btn btn-secondary btn-sm" onclick="testSheetConnection()" style="border-color:var(--accent);color:var(--accent)">🔗 TEST CONNECTION</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportAllToSheets()" style="border-color:var(--warn);color:var(--warn)">⬆ SYNC ALL MISSIONS</button>
+            </div>
+          </div>
             <div id="rankList" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:8px"><input type="text" id="newRank" placeholder="Add rank..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/><button class="btn btn-primary btn-sm" onclick="addRefItem('ranks','newRank','rankList')">+</button></div>
           </div>
@@ -638,7 +650,58 @@ Object.assign(window,{
   validateHHMM,onCrewNameSelect,renderImportPreview
 });
 
-// ── BULK IMPORT CONSTANTS (defined FIRST before any function uses them) ──
+// ── GOOGLE SHEETS BACKUP CONFIG ──
+// Replace these with your actual values (see setup guide)
+const SHEET_CONFIG = {
+  scriptUrl: 'YOUR_GOOGLE_APPS_SCRIPT_URL', // Web App URL from Apps Script deployment
+  sheetId:   'YOUR_GOOGLE_SHEET_ID',         // From the Sheet URL
+  enabled:   false // Set to true after you configure the above
+};
+
+// Send a row to Google Sheets via Apps Script Web App
+async function backupToSheet(sheetName, rowData) {
+  if (!SHEET_CONFIG.enabled || !SHEET_CONFIG.scriptUrl || SHEET_CONFIG.scriptUrl === 'YOUR_GOOGLE_APPS_SCRIPT_URL') return;
+  try {
+    await fetch(SHEET_CONFIG.scriptUrl, {
+      method: 'POST',
+      mode: 'no-cors', // Apps Script requires no-cors
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sheetName, rowData, sheetId: SHEET_CONFIG.sheetId })
+    });
+    console.log(`[Sheets] Backed up to "${sheetName}"`);
+  } catch(e) {
+    console.warn('[Sheets] Backup failed:', e.message);
+  }
+}
+
+// Build a flat mission row for Sheets
+function missionToSheetRow(payload, crewArr) {
+  const crewStr = (crewArr||[]).map(c=>`${c.rank} ${c.name} (${c.hoursFlown})`).join(' | ');
+  return [
+    payload.date,
+    payload.missionNumber,
+    payload.missionType,
+    payload.operationName,
+    payload.areaOfOperation,
+    payload.classification,
+    payload.priority,
+    payload.aircraftType,
+    payload.tailNumber,
+    payload.fuelUplift,
+    payload.fuelRemaining,
+    payload.fuelConsumed,
+    payload.sorties,
+    payload.flightHoursDisplay,
+    payload.takeoffTime,
+    payload.landingTime,
+    payload.blockTime,
+    payload.outcome,
+    payload.remarks,
+    crewStr,
+    payload.analystName,
+    new Date().toLocaleString()
+  ];
+}
 const MAX_CREW = 6;
 
 const FIELD_MAP = [
@@ -970,10 +1033,10 @@ async function saveMission(){
     const mTail=document.getElementById('mTail').value;
     const payload={
       date:mDate,missionNumber:document.getElementById('mNumber').value,missionType:mType,
-      operationName:document.getElementById('mOpName').value,areaOfOperation:document.getElementById('mArea').value,
+      areaOfOperation:document.getElementById('mArea').value,
       classification:document.getElementById('mClass').value,priority:document.getElementById('mPriority').value,
       aircraftType:document.getElementById('mAcType').value,tailNumber:mTail,
-      fuelUplift:+document.getElementById('mFuelUp').value||0,fuelRemaining:+document.getElementById('mFuelRem').value||0,fuelConsumed:+document.getElementById('mFuelCon').value||0,
+      fuelConsumed:+document.getElementById('mFuelCon').value||0,
       sorties:+mSorties,flightHours:hmmToDecimal(mHrs),flightHoursDisplay:mHrs,
       takeoffTime:document.getElementById('mTakeoff').value,landingTime:document.getElementById('mLanding').value,blockTime:+document.getElementById('mBlock').value||0,
       crew:getCrewManifest(),outcome:document.getElementById('mOutcome').value,remarks:document.getElementById('mRemarks').value,
@@ -983,6 +1046,8 @@ async function saveMission(){
       const {createdAt, ...updatePayload} = payload;
       await updateDoc(doc(db,'missions',editingMissionId), updatePayload);
       await logAudit('MISSION_UPDATE',`Mission ${payload.missionNumber} updated`);
+      // Backup update to Sheets
+      await backupToSheet('Missions', ['UPDATE', ...missionToSheetRow(payload, payload.crew)]);
       notify('Mission updated','success');
     }
     else{
@@ -1015,6 +1080,8 @@ async function saveMission(){
           crewRef.totalMissions=(+crewRef.totalMissions||0)+1;
         }
       }
+      // Backup new mission to Sheets
+      await backupToSheet('Missions', ['NEW', ...missionToSheetRow(payload, payload.crew)]);
       await logAudit('MISSION_CREATE',`Mission ${payload.missionNumber} created`);
       notify('Mission saved','success');
     }
@@ -1024,7 +1091,7 @@ async function saveMission(){
 }
 
 function clearMissionForm(){
-  ['mDate','mNumber','mOpName','mArea','mFuelUp','mFuelRem','mFuelCon','mSorties','mFlightHrs','mTakeoff','mLanding','mBlock','mRemarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['mDate','mNumber','mArea','mFuelCon','mSorties','mFlightHrs','mTakeoff','mLanding','mBlock','mRemarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('mType').value='';document.getElementById('mAcType').value='';document.getElementById('mTail').value='';
   document.getElementById('crewRows').innerHTML='';document.getElementById('mNumber').value=genMissionNumber();
   document.getElementById('mDate').value=new Date().toISOString().slice(0,10);editingMissionId=null;addCrewRow();
@@ -1088,9 +1155,9 @@ async function editMission(id){
   editingMissionId=id;navigate('missionEntry');
   setTimeout(()=>{
     document.getElementById('mDate').value=m.date||'';document.getElementById('mNumber').value=m.missionNumber||'';
-    document.getElementById('mOpName').value=m.operationName||'';document.getElementById('mArea').value=m.areaOfOperation||'';
+    document.getElementById('mArea').value=m.areaOfOperation||'';
     document.getElementById('mClass').value=m.classification||'RESTRICTED';document.getElementById('mPriority').value=m.priority||'ROUTINE';
-    document.getElementById('mFuelUp').value=m.fuelUplift||'';document.getElementById('mFuelRem').value=m.fuelRemaining||'';document.getElementById('mFuelCon').value=m.fuelConsumed||'';
+    document.getElementById('mFuelCon').value=m.fuelConsumed||'';
     document.getElementById('mSorties').value=m.sorties||'';document.getElementById('mFlightHrs').value=m.flightHoursDisplay||decimalToHmm(m.flightHours);
     document.getElementById('mTakeoff').value=m.takeoffTime||'';document.getElementById('mLanding').value=m.landingTime||'';document.getElementById('mBlock').value=m.blockTime||'';
     document.getElementById('mOutcome').value=m.outcome||'Successful';document.getElementById('mRemarks').value=m.remarks||'';
@@ -1223,11 +1290,55 @@ function printReport(){
 
 // ── CREW ──
 function renderCrew(){populateSelect('cRank',refData.ranks);filterCrew();}
+// Rank seniority order — highest first
+const RANK_ORDER = [
+  'Air Chief Marshal','Air Marshal','Air Vice Marshal','Air Commodore',
+  'Group Captain','Wing Commander','Squadron Leader','Flight Lieutenant',
+  'Flying Officer','Pilot Officer','Cadet'
+];
+
+function rankSeniority(rank){
+  if(!rank) return 999;
+  // Normalise common abbreviations
+  const map = {
+    'Air Chf Mshl':'Air Chief Marshal','Air Mshl':'Air Marshal','AVM':'Air Vice Marshal',
+    'Air Cdre':'Air Commodore','Gp Capt':'Group Captain','Wg Cdr':'Wing Commander',
+    'Sqn Ldr':'Squadron Leader','Flt Lt':'Flight Lieutenant','Fg Offr':'Flying Officer',
+    'Plt Offr':'Pilot Officer'
+  };
+  const normalised = map[rank] || rank;
+  const idx = RANK_ORDER.findIndex(r => r.toLowerCase() === normalised.toLowerCase());
+  return idx === -1 ? 998 : idx;
+}
+
 function filterCrew(){
   const search=document.getElementById('crewSearch').value.toLowerCase(),status=document.getElementById('crewStatus').value;
-  const data=allCrew.filter(c=>{if(status&&c.status!==status)return false;if(search&&![c.name,c.serviceNumber,c.specialization,c.rank].join(' ').toLowerCase().includes(search))return false;return true;});
+  const data=allCrew
+    .filter(c=>{
+      if(status&&c.status!==status)return false;
+      if(search&&![c.name,c.serviceNumber,c.specialization,c.rank].join(' ').toLowerCase().includes(search))return false;
+      return true;
+    })
+    .sort((a,b)=> rankSeniority(a.rank) - rankSeniority(b.rank) || (a.name||'').localeCompare(b.name||''));
   const tbl=document.getElementById('crewTbl');
-  tbl.innerHTML=data.length?data.map(c=>`<tr><td class="mono">${c.serviceNumber||'—'}</td><td>${c.rank||'—'}</td><td>${c.name||'—'}</td><td>${c.specialization||'—'}</td><td><span class="badge ${c.status==='Active'?'badge-success':'badge-gray'}">${c.status||'—'}</span></td><td class="mono">${(c.totalFlightHours||0).toFixed(1)}</td><td>${c.totalMissions||0}</td><td><button class="btn btn-secondary btn-sm" onclick="editCrewMember('${c.id}')">✏</button><button class="btn btn-danger btn-sm" onclick="deactivateCrew('${c.id}','${c.status}')">⊘</button></td></tr>`).join(''):`<tr><td colspan="8" class="empty-state">No crew records found</td></tr>`;
+  tbl.innerHTML=data.length?data.map(c=>{
+    // Convert stored decimal hours to H:MM for display
+    const totalHrs = +c.totalFlightHours||0;
+    const hrsDisplay = decimalToHmm(totalHrs);
+    return`<tr>
+      <td class="mono">${c.serviceNumber||'—'}</td>
+      <td>${c.rank||'—'}</td>
+      <td>${c.name||'—'}</td>
+      <td>${c.specialization||'—'}</td>
+      <td><span class="badge ${c.status==='Active'?'badge-success':'badge-gray'}">${c.status||'—'}</span></td>
+      <td class="mono">${hrsDisplay}</td>
+      <td>${c.totalMissions||0}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editCrewMember('${c.id}')">✏</button>
+        <button class="btn btn-danger btn-sm" onclick="deactivateCrew('${c.id}','${c.status}')">⊘</button>
+      </td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="8" class="empty-state">No crew records found</td></tr>`;
 }
 function openCrewModal(id){
   editingCrewId=id||null;document.getElementById('crewModalTitle').textContent=id?'Edit Crew Member':'Add Crew Member';
@@ -1300,8 +1411,20 @@ async function logAudit(action,details){try{await addDoc(collection(db,'audit_lo
 // ── SETTINGS ──
 async function renderSettings(){
   const snap=await getDoc(doc(db,'settings','main')).catch(()=>null);
-  if(snap?.exists()){const s=snap.data();document.getElementById('sUnit').value=s.unitName||'115 Special Operations Group';document.getElementById('sCO').value=s.commandingOfficer||'';document.getElementById('sBase').value=s.baseLocation||'';document.getElementById('sClass').value=s.classificationLevel||'RESTRICTED';}
-  renderRefList('missionTypeList',refData.missionTypes,'missionTypes');renderRefList('aircraftTypeList',refData.aircraftTypes,'aircraftTypes');renderRefList('rankList',refData.ranks,'ranks');
+  if(snap?.exists()){
+    const s=snap.data();
+    document.getElementById('sUnit').value=s.unitName||'115 Special Operations Group';
+    document.getElementById('sCO').value=s.commandingOfficer||'';
+    document.getElementById('sBase').value=s.baseLocation||'';
+    document.getElementById('sClass').value=s.classificationLevel||'RESTRICTED';
+    // Load Sheets config
+    if(s.sheetsUrl){ document.getElementById('sheetsUrl').value=s.sheetsUrl; SHEET_CONFIG.scriptUrl=s.sheetsUrl; }
+    if(s.sheetsId) { document.getElementById('sheetsId').value=s.sheetsId;  SHEET_CONFIG.sheetId=s.sheetsId;   }
+    if(s.sheetsEnabled !== undefined){ document.getElementById('sheetsEnabled').checked=s.sheetsEnabled; SHEET_CONFIG.enabled=s.sheetsEnabled; }
+  }
+  renderRefList('missionTypeList',refData.missionTypes,'missionTypes');
+  renderRefList('aircraftTypeList',refData.aircraftTypes,'aircraftTypes');
+  renderRefList('rankList',refData.ranks,'ranks');
 }
 function renderRefList(elId,items,key){document.getElementById(elId).innerHTML=items.map((item,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:1;font-size:13px">${item}</span><button class="btn btn-danger btn-sm" onclick="removeRefItem('${key}',${i},'${elId}')">✕</button></div>`).join('');}
 window.removeRefItem=async function(key,idx,elId){refData[key].splice(idx,1);await saveRefData();renderRefList(elId,refData[key],key);notify('Item removed','warn');};
@@ -1396,6 +1519,18 @@ async function runImport(){
         crew,attachments:[],analystId:currentUser.uid,analystName:currentUserData?.name||currentUser.email,
         importedAt:serverTimestamp(),createdAt:serverTimestamp(),updatedAt:serverTimestamp()
       });
+      // Backup to Google Sheets
+      await backupToSheet('Missions', ['IMPORT', dateStr, missionNum, mType,
+        String(get('operationName')).trim(), String(get('areaOfOperation')).trim(),
+        String(get('classification')).trim()||'RESTRICTED', String(get('priority')).trim()||'ROUTINE',
+        String(get('aircraftType')).trim(), String(get('tailNumber')).trim(),
+        +get('fuelUplift')||0, +get('fuelRemaining')||0, +get('fuelConsumed')||0,
+        +get('sorties')||1, flightDisp,
+        String(get('takeoffTime')).trim(), String(get('landingTime')).trim(), +get('blockTime')||0,
+        String(get('outcome')).trim()||'Successful', String(get('remarks')).trim(),
+        crew.map(c=>`${c.rank} ${c.name}`).join(' | '),
+        currentUserData?.name||currentUser.email, new Date().toLocaleString()
+      ]);
       // ── Update aircraft totals ──
       const tailNum = String(get('tailNumber')).trim();
       if(tailNum){
@@ -1457,7 +1592,55 @@ function showLoading(msg){document.getElementById('loadingMsg').textContent=msg|
 function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show');}
 function notify(msg,type='success'){const el=document.createElement('div');el.className=`notif-item ${type}`;el.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✕':'⚠'}</span><span>${msg}</span>`;document.getElementById('notif').appendChild(el);setTimeout(()=>el.remove(),4000);}
 
-// ── SERVICE WORKER REGISTRATION ──
+// ── GOOGLE SHEETS SETTINGS ──
+window.saveSheetConfig  = saveSheetConfig;
+window.testSheetConnection = testSheetConnection;
+window.exportAllToSheets = exportAllToSheets;
+
+async function saveSheetConfig() {
+  const url  = document.getElementById('sheetsUrl').value.trim();
+  const id   = document.getElementById('sheetsId').value.trim();
+  const enabled = document.getElementById('sheetsEnabled').checked;
+  // Update runtime config
+  SHEET_CONFIG.scriptUrl = url;
+  SHEET_CONFIG.sheetId   = id;
+  SHEET_CONFIG.enabled   = enabled;
+  // Persist to Firestore settings
+  await setDoc(doc(db,'settings','main'), {
+    sheetsUrl: url, sheetsId: id, sheetsEnabled: enabled, updatedAt: serverTimestamp()
+  }, { merge: true });
+  notify('Google Sheets config saved', 'success');
+}
+
+async function testSheetConnection() {
+  const url = document.getElementById('sheetsUrl').value.trim();
+  if (!url || url === 'YOUR_GOOGLE_APPS_SCRIPT_URL') { notify('Enter your Apps Script URL first', 'warn'); return; }
+  try {
+    showLoading('TESTING CONNECTION...');
+    const res = await fetch(url, { method:'GET', mode:'no-cors' });
+    hideLoading();
+    notify('Connection test sent — check your Google Sheet for a test row', 'success');
+  } catch(e) {
+    hideLoading();
+    notify('Connection failed: ' + e.message, 'error');
+  }
+}
+
+async function exportAllToSheets() {
+  if (!SHEET_CONFIG.enabled) { notify('Enable Sheets backup and save config first', 'warn'); return; }
+  if (!confirm(`Sync all ${allMissions.length} missions to Google Sheets? This may take a moment.`)) return;
+  showLoading('SYNCING TO GOOGLE SHEETS...');
+  let done = 0, errors = 0;
+  for (const m of allMissions) {
+    try {
+      await backupToSheet('Missions', ['SYNC', ...missionToSheetRow(m, m.crew)]);
+      done++;
+    } catch(e) { errors++; }
+  }
+  hideLoading();
+  notify(`Synced ${done} missions to Google Sheets${errors ? ' | ' + errors + ' failed' : ''}`, done > 0 ? 'success' : 'error');
+  await logAudit('SHEETS_SYNC', `Synced ${done} missions to Google Sheets`);
+}
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
