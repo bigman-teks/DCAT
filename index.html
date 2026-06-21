@@ -359,7 +359,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
       <div class="card"><div class="card-title">Sortie Information</div>
         <div class="form-grid">
           <div class="fg"><label>Number of Sorties *</label><input type="number" id="mSorties" min="1"/></div>
-          <div class="fg"><label>Flight Hours * (H:MM)</label><input type="text" id="mFlightHrs" placeholder="e.g. 2:45" maxlength="6" oninput="validateHHMM(this)"/></div>
+          <div class="fg"><label>Flight Hours * (H:MM)</label><input type="text" id="mFlightHrs" placeholder="e.g. 2:45" maxlength="6" oninput="validateHHMM(this);syncCrewHoursWithMission()"/></div>
           <div class="fg"><label>Takeoff Time</label><input type="time" id="mTakeoff"/></div>
           <div class="fg"><label>Landing Time</label><input type="time" id="mLanding"/></div>
           <div class="fg"><label>Block Time (hrs)</label><input type="number" id="mBlock" step="0.1"/></div>
@@ -542,6 +542,15 @@ tr:hover td{background:rgba(34,197,94,.04)}
               <button class="btn btn-secondary btn-sm" onclick="exportAllToSheets()" style="border-color:var(--warn);color:var(--warn)">⬆ SYNC ALL MISSIONS</button>
             </div>
           </div>
+          <div class="card" style="border-color:var(--danger)">
+            <div class="card-title" style="color:var(--danger)">🔄 RECALCULATE TOTALS</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">If crew or aircraft totals look wrong (missing hours, mismatched names), this rebuilds every total from scratch by scanning all missions in the database.</p>
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-sm" onclick="recalculateCrewTotals()" style="border-color:var(--danger);color:var(--danger)">🔄 RECALCULATE CREW TOTALS</button>
+              <button class="btn btn-secondary btn-sm" onclick="recalculateAircraftTotals()" style="border-color:var(--danger);color:var(--danger)">🔄 RECALCULATE AIRCRAFT TOTALS</button>
+            </div>
+            <div id="recalcReport" style="margin-top:12px"></div>
+          </div>
             <div id="rankList" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:8px"><input type="text" id="newRank" placeholder="Add rank..." style="flex:1;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"/><button class="btn btn-primary btn-sm" onclick="addRefItem('ranks','newRank','rankList')">+</button></div>
           </div>
@@ -604,6 +613,7 @@ const firebaseConfig = {
   appId: "1:413137616214:web:b36193702e22c51e6b6af7",
   measurementId: "G-P068DY5T3R"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -674,21 +684,18 @@ async function backupToSheet(sheetName, rowData) {
   }
 }
 
-// Build a flat mission row for Sheets
+// Build a flat mission row for Sheets — must match SHEET_HEADERS.Missions order in Apps Script
 function missionToSheetRow(payload, crewArr) {
   const crewStr = (crewArr||[]).map(c=>`${c.rank} ${c.name} (${c.hoursFlown})`).join(' | ');
   return [
     payload.date,
     payload.missionNumber,
     payload.missionType,
-    payload.operationName,
     payload.areaOfOperation,
     payload.classification,
     payload.priority,
     payload.aircraftType,
     payload.tailNumber,
-    payload.fuelUplift,
-    payload.fuelRemaining,
     payload.fuelConsumed,
     payload.sorties,
     payload.flightHoursDisplay,
@@ -992,6 +999,9 @@ function addCrewRow(prefill){
   const container=document.getElementById('crewRows');
   const div=document.createElement('div');div.className='crew-row';
   const crewOptions=allCrew.filter(c=>c.status==='Active').map(c=>`<option value="${c.id}" data-rank="${c.rank||''}" data-svc="${c.serviceNumber||''}" data-name="${c.name||''}">${c.rank?c.rank+' ':''}${c.name}</option>`).join('');
+  // Auto-fill hours flown from the mission's Flight Hours field, unless a prefill value is given
+  const missionHrs = document.getElementById('mFlightHrs')?.value || '';
+  const hrsValue = prefill?.hoursFlown || missionHrs;
   div.innerHTML=`
     <div class="fg" style="margin:0"><label style="font-size:10px">ROLE</label><input type="text" class="cr-role" placeholder="e.g. Pilot" value="${prefill?.role||''}"/></div>
     <div class="fg" style="margin:0"><label style="font-size:10px">SVC NO.</label><input type="text" class="cr-svc" readonly placeholder="Auto-filled" value="${prefill?.serviceNumber||''}" style="background:var(--bg);color:var(--muted)"/></div>
@@ -1001,7 +1011,7 @@ function addCrewRow(prefill){
         <option value="">-- Select Crew --</option>${crewOptions}
       </select>
     </div>
-    <div class="fg" style="margin:0"><label style="font-size:10px">HRS FLOWN (H:MM)</label><input type="text" class="cr-hrs" placeholder="e.g. 1:30" maxlength="6" oninput="validateHHMM(this)" value="${prefill?.hoursFlown||''}"/></div>
+    <div class="fg" style="margin:0"><label style="font-size:10px">HRS FLOWN (H:MM)</label><input type="text" class="cr-hrs" placeholder="e.g. 1:30" maxlength="6" oninput="validateHHMM(this);this.dataset.manuallyEdited='1'" value="${hrsValue}"/></div>
     <button class="btn btn-danger btn-sm cr-del" onclick="this.parentElement.remove()" style="align-self:flex-end;padding:7px 10px">✕</button>`;
   container.appendChild(div);
   if(prefill?.name){
@@ -1011,6 +1021,17 @@ function addCrewRow(prefill){
     else{const g=document.createElement('option');g.value='';g.textContent=prefill.name;g.selected=true;sel.insertBefore(g,sel.options[1]);}
   }
 }
+
+// Keep all crew rows' Hrs Flown in sync with the mission's Flight Hours field
+// unless the person has manually edited an individual row's hours.
+window.syncCrewHoursWithMission = function(){
+  const missionHrs = document.getElementById('mFlightHrs')?.value || '';
+  document.querySelectorAll('#crewRows .crew-row .cr-hrs').forEach(input=>{
+    if(!input.dataset.manuallyEdited){
+      input.value = missionHrs;
+    }
+  });
+};
 
 function onCrewNameSelect(sel){const row=sel.closest('.crew-row'),opt=sel.options[sel.selectedIndex];row.querySelector('.cr-rank').value=opt.dataset.rank||'';row.querySelector('.cr-svc').value=opt.dataset.svc||'';}
 
@@ -1290,27 +1311,6 @@ function printReport(){
 
 // ── CREW ──
 function renderCrew(){populateSelect('cRank',refData.ranks);filterCrew();}
-// Rank seniority order — highest first
-const RANK_ORDER = [
-  'Air Chief Marshal','Air Marshal','Air Vice Marshal','Air Commodore',
-  'Group Captain','Wing Commander','Squadron Leader','Flight Lieutenant',
-  'Flying Officer','Pilot Officer','Cadet'
-];
-
-function rankSeniority(rank){
-  if(!rank) return 999;
-  // Normalise common abbreviations
-  const map = {
-    'Air Chf Mshl':'Air Chief Marshal','Air Mshl':'Air Marshal','AVM':'Air Vice Marshal',
-    'Air Cdre':'Air Commodore','Gp Capt':'Group Captain','Wg Cdr':'Wing Commander',
-    'Sqn Ldr':'Squadron Leader','Flt Lt':'Flight Lieutenant','Fg Offr':'Flying Officer',
-    'Plt Offr':'Pilot Officer'
-  };
-  const normalised = map[rank] || rank;
-  const idx = RANK_ORDER.findIndex(r => r.toLowerCase() === normalised.toLowerCase());
-  return idx === -1 ? 998 : idx;
-}
-
 function filterCrew(){
   const search=document.getElementById('crewSearch').value.toLowerCase(),status=document.getElementById('crewStatus').value;
   const data=allCrew
@@ -1319,10 +1319,9 @@ function filterCrew(){
       if(search&&![c.name,c.serviceNumber,c.specialization,c.rank].join(' ').toLowerCase().includes(search))return false;
       return true;
     })
-    .sort((a,b)=> rankSeniority(a.rank) - rankSeniority(b.rank) || (a.name||'').localeCompare(b.name||''));
+    .sort((a,b)=> svcNumValue(a.serviceNumber) - svcNumValue(b.serviceNumber));
   const tbl=document.getElementById('crewTbl');
   tbl.innerHTML=data.length?data.map(c=>{
-    // Convert stored decimal hours to H:MM for display
     const totalHrs = +c.totalFlightHours||0;
     const hrsDisplay = decimalToHmm(totalHrs);
     return`<tr>
@@ -1339,6 +1338,14 @@ function filterCrew(){
       </td>
     </tr>`;
   }).join(''):`<tr><td colspan="8" class="empty-state">No crew records found</td></tr>`;
+}
+
+// Extracts the numeric portion of a service number for proper numeric sorting
+// e.g. "NAF/4781" -> 4781, "NAF 547" -> 547, "503" -> 503
+function svcNumValue(svc){
+  if(!svc) return Infinity;
+  const match = String(svc).match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : Infinity;
 }
 function openCrewModal(id){
   editingCrewId=id||null;document.getElementById('crewModalTitle').textContent=id?'Edit Crew Member':'Add Crew Member';
@@ -1521,10 +1528,10 @@ async function runImport(){
       });
       // Backup to Google Sheets
       await backupToSheet('Missions', ['IMPORT', dateStr, missionNum, mType,
-        String(get('operationName')).trim(), String(get('areaOfOperation')).trim(),
+        String(get('areaOfOperation')).trim(),
         String(get('classification')).trim()||'RESTRICTED', String(get('priority')).trim()||'ROUTINE',
         String(get('aircraftType')).trim(), String(get('tailNumber')).trim(),
-        +get('fuelUplift')||0, +get('fuelRemaining')||0, +get('fuelConsumed')||0,
+        +get('fuelConsumed')||0,
         +get('sorties')||1, flightDisp,
         String(get('takeoffTime')).trim(), String(get('landingTime')).trim(), +get('blockTime')||0,
         String(get('outcome')).trim()||'Successful', String(get('remarks')).trim(),
@@ -1596,6 +1603,132 @@ function notify(msg,type='success'){const el=document.createElement('div');el.cl
 window.saveSheetConfig  = saveSheetConfig;
 window.testSheetConnection = testSheetConnection;
 window.exportAllToSheets = exportAllToSheets;
+window.recalculateCrewTotals = recalculateCrewTotals;
+window.recalculateAircraftTotals = recalculateAircraftTotals;
+
+async function recalculateCrewTotals(){
+  if(!confirm('This will rebuild ALL crew flight hours and mission counts from scratch by scanning every mission. Continue?')) return;
+  showLoading('SCANNING MISSIONS...');
+  const report = document.getElementById('recalcReport');
+
+  // Build a fresh totals map keyed by normalised crew name
+  const totals = {}; // normalisedName -> {hrs, missions, matchedRegistryId}
+  const unmatched = new Set();
+
+  allMissions.forEach(m=>{
+    (m.crew||[]).forEach(c=>{
+      if(!c.name) return;
+      const key = c.name.trim().toLowerCase();
+      if(!totals[key]) totals[key] = { hrs:0, missions:0, displayName:c.name.trim() };
+      totals[key].hrs += hmmToDecimal(c.hoursFlown || '0:00');
+      totals[key].missions += 1;
+    });
+  });
+
+  let updated=0, notFound=0;
+  for(const [key, data] of Object.entries(totals)){
+    const crewRef = allCrew.find(x=>x.name.trim().toLowerCase()===key);
+    if(crewRef){
+      await updateDoc(doc(db,'crew',crewRef.id), {
+        totalFlightHours: data.hrs,
+        totalMissions: data.missions
+      });
+      crewRef.totalFlightHours = data.hrs;
+      crewRef.totalMissions = data.missions;
+      updated++;
+    } else {
+      unmatched.add(data.displayName);
+      notFound++;
+    }
+  }
+
+  // Reset totals to 0 for crew members with NO missions found at all
+  let resetCount = 0;
+  for(const c of allCrew){
+    const key = c.name.trim().toLowerCase();
+    if(!totals[key] && ((+c.totalFlightHours||0) > 0 || (+c.totalMissions||0) > 0)){
+      await updateDoc(doc(db,'crew',c.id), { totalFlightHours:0, totalMissions:0 });
+      c.totalFlightHours = 0; c.totalMissions = 0;
+      resetCount++;
+    }
+  }
+
+  hideLoading();
+  filterCrew();
+
+  let html = `<div class="card" style="background:var(--bg);border-color:var(--primary)">
+    <p style="font-size:13px;color:var(--primary)">✓ Updated ${updated} crew member(s)</p>
+    <p style="font-size:13px;color:var(--muted)">Reset ${resetCount} crew member(s) with no matching missions to 0</p>`;
+  if(unmatched.size){
+    html += `<p style="font-size:13px;color:var(--warn);margin-top:8px">⚠ ${unmatched.size} name(s) found in missions but NOT in Crew Registry — these hours could not be assigned:</p>
+    <p style="font-size:12px;color:var(--muted);font-family:monospace">${[...unmatched].join(', ')}</p>
+    <p style="font-size:12px;color:var(--muted);margin-top:6px">Add these names to the Crew Registry exactly as spelled, then recalculate again.</p>`;
+  }
+  html += `</div>`;
+  report.innerHTML = html;
+
+  await logAudit('RECALC_CREW', `Recalculated totals for ${updated} crew, reset ${resetCount}, ${notFound} unmatched`);
+  notify(`Recalculated ${updated} crew totals`, 'success');
+}
+
+async function recalculateAircraftTotals(){
+  if(!confirm('This will rebuild ALL aircraft flight hours and mission counts from scratch. Continue?')) return;
+  showLoading('SCANNING MISSIONS...');
+  const report = document.getElementById('recalcReport');
+
+  const totals = {};
+  allMissions.forEach(m=>{
+    if(!m.tailNumber) return;
+    const key = m.tailNumber.trim();
+    if(!totals[key]) totals[key] = { hrs:0, missions:0, lastDate:'' };
+    totals[key].hrs += (+m.flightHours||0);
+    totals[key].missions += 1;
+    if(!totals[key].lastDate || (m.date||'') > totals[key].lastDate) totals[key].lastDate = m.date||'';
+  });
+
+  let updated=0, unmatched=new Set();
+  for(const [tail, data] of Object.entries(totals)){
+    const acRef = allAircraft.find(a=>a.tailNumber.trim()===tail);
+    if(acRef){
+      await updateDoc(doc(db,'aircraft',acRef.id), {
+        totalFlightHours: data.hrs,
+        totalMissions: data.missions,
+        lastMissionDate: data.lastDate
+      });
+      acRef.totalFlightHours = data.hrs;
+      acRef.totalMissions = data.missions;
+      acRef.lastMissionDate = data.lastDate;
+      updated++;
+    } else {
+      unmatched.add(tail);
+    }
+  }
+
+  let resetCount=0;
+  for(const a of allAircraft){
+    if(!totals[a.tailNumber.trim()] && ((+a.totalFlightHours||0)>0 || (+a.totalMissions||0)>0)){
+      await updateDoc(doc(db,'aircraft',a.id), { totalFlightHours:0, totalMissions:0 });
+      a.totalFlightHours=0; a.totalMissions=0;
+      resetCount++;
+    }
+  }
+
+  hideLoading();
+  filterAircraft();
+
+  let html = `<div class="card" style="background:var(--bg);border-color:var(--primary)">
+    <p style="font-size:13px;color:var(--primary)">✓ Updated ${updated} aircraft</p>
+    <p style="font-size:13px;color:var(--muted)">Reset ${resetCount} aircraft with no matching missions to 0</p>`;
+  if(unmatched.size){
+    html += `<p style="font-size:13px;color:var(--warn);margin-top:8px">⚠ ${unmatched.size} tail number(s) found in missions but NOT in Aircraft Registry:</p>
+    <p style="font-size:12px;color:var(--muted);font-family:monospace">${[...unmatched].join(', ')}</p>`;
+  }
+  html += `</div>`;
+  report.innerHTML = html;
+
+  await logAudit('RECALC_AIRCRAFT', `Recalculated totals for ${updated} aircraft, reset ${resetCount}`);
+  notify(`Recalculated ${updated} aircraft totals`, 'success');
+}
 
 async function saveSheetConfig() {
   const url  = document.getElementById('sheetsUrl').value.trim();
