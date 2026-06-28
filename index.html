@@ -310,6 +310,9 @@ tr:hover td{background:rgba(34,197,94,.04)}
       <div class="card"><div class="card-title">Recent Missions</div>
         <div class="tbl-wrap"><table><thead><tr><th>Mission No.</th><th>Date</th><th>Type</th><th>Operation</th><th>Aircraft</th><th>Sorties</th><th>Flight Hrs</th><th>Outcome</th></tr></thead><tbody id="recentMissionsTbl"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody></table></div>
       </div>
+      <div class="card"><div class="card-title">✈ Pilot Currency by Aircraft Type</div>
+        <div class="tbl-wrap"><table><thead><tr><th>Aircraft Type</th><th>Total Pilots</th><th>🟢 Current</th><th>🟡 Expiring</th><th>🔴 Not Current</th><th>⚪ No Data</th></tr></thead><tbody id="currencyByTypeTbl"></tbody></table></div>
+      </div>
     </div>
 
     <!-- MISSION DATA ENTRY -->
@@ -461,9 +464,11 @@ tr:hover td{background:rgba(34,197,94,.04)}
         <div class="search-bar">
           <input type="text" id="crewSearch" placeholder="Search crew..." oninput="filterCrew()"/>
           <select id="crewStatus" onchange="filterCrew()"><option value="">All Status</option><option>Active</option><option>Inactive</option></select>
+          <button class="btn btn-secondary btn-sm" onclick="exportCrewCSV()">📊 Excel</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCrewPDF()">📄 PDF</button>
           <button class="btn btn-primary btn-sm" onclick="openCrewModal()">+ ADD CREW</button>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Svc No.</th><th>Rank</th><th>Name</th><th>Specialization</th><th>Status</th><th>Total Hrs</th><th>Total Missions</th><th>Actions</th></tr></thead><tbody id="crewTbl"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Svc No.</th><th>Rank</th><th>Name</th><th>Specialization</th><th>Aircraft Type</th><th>Status</th><th>Currency</th><th>Total Hrs</th><th>Total Missions</th><th>Actions</th></tr></thead><tbody id="crewTbl"></tbody></table></div>
       </div>
     </div>
 
@@ -569,6 +574,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
     <div class="fg"><label>Rank *</label><select id="cRank"><option value="">Select...</option></select></div>
     <div class="fg"><label>Full Name *</label><input type="text" id="cName"/></div>
     <div class="fg"><label>Specialization *</label><input type="text" id="cSpec" placeholder="e.g. Pilot, Navigator"/></div>
+    <div class="fg"><label>Aircraft Type(s)</label><select id="cAcType" multiple style="height:90px"></select></div>
     <div class="fg"><label>Unit</label><input type="text" id="cUnit"/></div>
     <div class="fg"><label>Status</label><select id="cStatus"><option>Active</option><option>Inactive</option></select></div>
     <div class="fg"><label>Date Joined</label><input type="date" id="cJoined"/></div>
@@ -613,8 +619,6 @@ const firebaseConfig = {
   appId: "1:413137616214:web:b36193702e22c51e6b6af7",
   measurementId: "G-P068DY5T3R"
 };
-
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -949,7 +953,37 @@ function renderDashboard(){
   const tbl=document.getElementById('recentMissionsTbl');
   const recent=allMissions.slice(0,10);
   tbl.innerHTML=recent.length?recent.map(m=>`<tr><td class="mono">${m.missionNumber||'—'}</td><td>${m.date||'—'}</td><td><span class="badge badge-info">${m.missionType||'—'}</span></td><td>${m.operationName||'—'}</td><td>${m.tailNumber||'—'}</td><td>${m.sorties||0}</td><td>${m.flightHoursDisplay||decimalToHmm(m.flightHours)}</td><td>${outcomeBadge(m.outcome)}</td></tr>`).join(''):`<tr><td colspan="8" class="empty-state">No mission data</td></tr>`;
+  renderCurrencyByType();
   buildDashboardCharts();
+}
+
+function renderCurrencyByType(){
+  const tbl=document.getElementById('currencyByTypeTbl');
+  if(!tbl) return;
+  // Group active crew by each aircraft type they're qualified on
+  const types = refData.aircraftTypes || [];
+  const rows = types.map(type=>{
+    const pilots = allCrew.filter(c=>c.status==='Active' && (c.aircraftTypes||[]).includes(type));
+    let current=0, expiring=0, notCurrent=0, noData=0;
+    pilots.forEach(p=>{
+      const s = getCurrencyStatus(p.name).status;
+      if(s==='current') current++;
+      else if(s==='expiring') expiring++;
+      else if(s==='not_current') notCurrent++;
+      else noData++;
+    });
+    return { type, total: pilots.length, current, expiring, notCurrent, noData };
+  }).filter(r=>r.total>0); // only show types with at least one qualified pilot
+
+  tbl.innerHTML = rows.length ? rows.map(r=>`
+    <tr>
+      <td><span class="badge badge-info">${r.type}</span></td>
+      <td class="mono">${r.total}</td>
+      <td class="mono" style="color:var(--primary)">${r.current}</td>
+      <td class="mono" style="color:var(--warn)">${r.expiring}</td>
+      <td class="mono" style="color:var(--danger)">${r.notCurrent}</td>
+      <td class="mono" style="color:var(--muted)">${r.noData}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No pilots assigned to aircraft types yet</td></tr>`;
 }
 
 function getLast6Months(){const months=[],d=new Date();for(let i=5;i>=0;i--){const t=new Date(d.getFullYear(),d.getMonth()-i,1);months.push(`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`);}return months;}
@@ -1310,7 +1344,14 @@ function printReport(){
 }
 
 // ── CREW ──
-function renderCrew(){populateSelect('cRank',refData.ranks);filterCrew();}
+function renderCrew(){populateSelect('cRank',refData.ranks);populateMultiSelect('cAcType',refData.aircraftTypes);filterCrew();}
+
+function populateMultiSelect(id, items){
+  const sel=document.getElementById(id);if(!sel)return;
+  const cur=[...sel.selectedOptions].map(o=>o.value);
+  sel.innerHTML=items.map(i=>`<option value="${i}">${i}</option>`).join('');
+  [...sel.options].forEach(o=>{if(cur.includes(o.value))o.selected=true;});
+}
 function filterCrew(){
   const search=document.getElementById('crewSearch').value.toLowerCase(),status=document.getElementById('crewStatus').value;
   const data=allCrew
@@ -1329,7 +1370,9 @@ function filterCrew(){
       <td>${c.rank||'—'}</td>
       <td>${c.name||'—'}</td>
       <td>${c.specialization||'—'}</td>
+      <td>${(c.aircraftTypes&&c.aircraftTypes.length)?c.aircraftTypes.map(t=>`<span class="badge badge-info" style="margin-right:3px">${t}</span>`).join(''):'—'}</td>
       <td><span class="badge ${c.status==='Active'?'badge-success':'badge-gray'}">${c.status||'—'}</span></td>
+      <td>${currencyBadge(c.name)}</td>
       <td class="mono">${hrsDisplay}</td>
       <td>${c.totalMissions||0}</td>
       <td>
@@ -1338,6 +1381,41 @@ function filterCrew(){
       </td>
     </tr>`;
   }).join(''):`<tr><td colspan="8" class="empty-state">No crew records found</td></tr>`;
+}
+
+// Find the most recent mission date a crew member flew on, by matching name
+function getLastFlightDate(crewName){
+  if(!crewName) return null;
+  const key = crewName.trim().toLowerCase();
+  let latest = null;
+  allMissions.forEach(m=>{
+    (m.crew||[]).forEach(c=>{
+      if(c.name && c.name.trim().toLowerCase()===key && m.date){
+        if(!latest || m.date > latest) latest = m.date;
+      }
+    });
+  });
+  return latest;
+}
+
+// Returns { status: 'current'|'expiring'|'not_current'|'no_data', daysSince, lastDate }
+function getCurrencyStatus(crewName){
+  const lastDate = getLastFlightDate(crewName);
+  if(!lastDate) return { status:'no_data', daysSince:null, lastDate:null };
+  const last = new Date(lastDate);
+  const now = new Date();
+  const daysSince = Math.floor((now - last) / (1000*60*60*24));
+  if(daysSince > 60) return { status:'not_current', daysSince, lastDate };
+  if(daysSince > 45) return { status:'expiring', daysSince, lastDate };
+  return { status:'current', daysSince, lastDate };
+}
+
+function currencyBadge(crewName){
+  const c = getCurrencyStatus(crewName);
+  if(c.status==='no_data') return `<span class="badge badge-gray" title="No flight records found">No Data</span>`;
+  if(c.status==='not_current') return `<span class="badge badge-danger" title="Last flew ${c.daysSince} days ago (${c.lastDate})">⚠ Not Current (${c.daysSince}d)</span>`;
+  if(c.status==='expiring') return `<span class="badge badge-warn" title="Last flew ${c.daysSince} days ago (${c.lastDate})">Expiring (${c.daysSince}d)</span>`;
+  return `<span class="badge badge-success" title="Last flew ${c.daysSince} days ago (${c.lastDate})">Current (${c.daysSince}d)</span>`;
 }
 
 // Extracts the numeric portion of a service number for proper numeric sorting
@@ -1350,12 +1428,29 @@ function svcNumValue(svc){
 function openCrewModal(id){
   editingCrewId=id||null;document.getElementById('crewModalTitle').textContent=id?'Edit Crew Member':'Add Crew Member';
   populateSelect('cRank',refData.ranks);
-  if(!id){['cSvcNo','cName','cSpec','cUnit','cQual','cJoined'].forEach(i=>document.getElementById(i).value='');document.getElementById('cStatus').value='Active';}
+  populateMultiSelect('cAcType', refData.aircraftTypes);
+  if(!id){['cSvcNo','cName','cSpec','cUnit','cQual','cJoined'].forEach(i=>document.getElementById(i).value='');document.getElementById('cStatus').value='Active';[...document.getElementById('cAcType').options].forEach(o=>o.selected=false);}
   openModal('crewModal');
 }
-function editCrewMember(id){const c=allCrew.find(x=>x.id===id);if(!c)return;openCrewModal(id);setTimeout(()=>{document.getElementById('cSvcNo').value=c.serviceNumber||'';document.getElementById('cRank').value=c.rank||'';document.getElementById('cName').value=c.name||'';document.getElementById('cSpec').value=c.specialization||'';document.getElementById('cUnit').value=c.unit||'';document.getElementById('cStatus').value=c.status||'Active';document.getElementById('cJoined').value=c.dateJoined||'';document.getElementById('cQual').value=c.qualifications||'';},50);}
+function editCrewMember(id){
+  const c=allCrew.find(x=>x.id===id);if(!c)return;
+  openCrewModal(id);
+  setTimeout(()=>{
+    document.getElementById('cSvcNo').value=c.serviceNumber||'';
+    document.getElementById('cRank').value=c.rank||'';
+    document.getElementById('cName').value=c.name||'';
+    document.getElementById('cSpec').value=c.specialization||'';
+    document.getElementById('cUnit').value=c.unit||'';
+    document.getElementById('cStatus').value=c.status||'Active';
+    document.getElementById('cJoined').value=c.dateJoined||'';
+    document.getElementById('cQual').value=c.qualifications||'';
+    const acSel=document.getElementById('cAcType');
+    [...acSel.options].forEach(o=>{o.selected=(c.aircraftTypes||[]).includes(o.value);});
+  },50);
+}
 async function saveCrew(){
-  const payload={serviceNumber:document.getElementById('cSvcNo').value,rank:document.getElementById('cRank').value,name:document.getElementById('cName').value,specialization:document.getElementById('cSpec').value,unit:document.getElementById('cUnit').value,status:document.getElementById('cStatus').value,dateJoined:document.getElementById('cJoined').value,qualifications:document.getElementById('cQual').value,updatedAt:serverTimestamp()};
+  const acTypes=[...document.getElementById('cAcType').selectedOptions].map(o=>o.value);
+  const payload={serviceNumber:document.getElementById('cSvcNo').value,rank:document.getElementById('cRank').value,name:document.getElementById('cName').value,specialization:document.getElementById('cSpec').value,aircraftTypes:acTypes,unit:document.getElementById('cUnit').value,status:document.getElementById('cStatus').value,dateJoined:document.getElementById('cJoined').value,qualifications:document.getElementById('cQual').value,updatedAt:serverTimestamp()};
   if(!payload.name||!payload.serviceNumber){notify('Name and Service Number required','error');return;}
   showLoading('SAVING...');
   if(editingCrewId)await updateDoc(doc(db,'crew',editingCrewId),payload);
@@ -1605,6 +1700,84 @@ window.testSheetConnection = testSheetConnection;
 window.exportAllToSheets = exportAllToSheets;
 window.recalculateCrewTotals = recalculateCrewTotals;
 window.recalculateAircraftTotals = recalculateAircraftTotals;
+window.exportCrewCSV = exportCrewCSV;
+window.exportCrewPDF = exportCrewPDF;
+
+function getFilteredCrewForExport(){
+  const search=document.getElementById('crewSearch').value.toLowerCase(),status=document.getElementById('crewStatus').value;
+  return allCrew
+    .filter(c=>{
+      if(status&&c.status!==status)return false;
+      if(search&&![c.name,c.serviceNumber,c.specialization,c.rank].join(' ').toLowerCase().includes(search))return false;
+      return true;
+    })
+    .sort((a,b)=> svcNumValue(a.serviceNumber) - svcNumValue(b.serviceNumber));
+}
+
+function exportCrewCSV(){
+  const data = getFilteredCrewForExport();
+  const headers=['Svc No','Rank','Name','Specialization','Aircraft Types','Status','Currency','Total Hrs','Total Missions','Unit','Qualifications'];
+  const rows = data.map(c=>{
+    const cur=getCurrencyStatus(c.name);
+    const curLabel = cur.status==='no_data'?'No Data':cur.status==='not_current'?`Not Current (${cur.daysSince}d)`:cur.status==='expiring'?`Expiring (${cur.daysSince}d)`:`Current (${cur.daysSince}d)`;
+    return[c.serviceNumber,c.rank,c.name,c.specialization,(c.aircraftTypes||[]).join(', '),c.status,curLabel,decimalToHmm(+c.totalFlightHours||0),c.totalMissions||0,c.unit||'',c.qualifications||''];
+  });
+  let xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Crew Registry"><Table>`;
+  [headers,...rows].forEach(row=>{xml+='<Row>'+row.map(c=>`<Cell><Data ss:Type="String">${c||''}</Data></Cell>`).join('')+'</Row>';});
+  xml+='</Table></Worksheet></Workbook>';
+  download('crew_registry.xls',xml,'application/vnd.ms-excel');
+  notify('Crew registry exported to Excel','success');
+}
+
+function exportCrewPDF(){
+  const data = getFilteredCrewForExport();
+  const rows = data.map(c=>{
+    const cur=getCurrencyStatus(c.name);
+    const curLabel = cur.status==='no_data'?'No Data':cur.status==='not_current'?`Not Current (${cur.daysSince}d)`:cur.status==='expiring'?`Expiring (${cur.daysSince}d)`:`Current (${cur.daysSince}d)`;
+    const curColor = cur.status==='not_current'?'#dc2626':cur.status==='expiring'?'#d97706':cur.status==='current'?'#16a34a':'#64748b';
+    return`<tr>
+      <td>${c.serviceNumber||'—'}</td><td>${c.rank||'—'}</td><td>${c.name||'—'}</td>
+      <td>${c.specialization||'—'}</td><td>${(c.aircraftTypes||[]).join(', ')||'—'}</td>
+      <td>${c.status||'—'}</td><td style="color:${curColor};font-weight:600">${curLabel}</td>
+      <td>${decimalToHmm(+c.totalFlightHours||0)}</td><td>${c.totalMissions||0}</td>
+    </tr>`;
+  }).join('');
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>NAF 115 SOG Crew Registry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <style>
+      body{font-family:Rajdhani,sans-serif;background:#fff;color:#111;padding:28px}
+      .hdr{text-align:center;border-bottom:2px solid #166534;padding-bottom:16px;margin-bottom:20px}
+      .hdr h1{font-size:18px;letter-spacing:3px;color:#166534;margin:0}
+      .hdr h2{font-size:13px;letter-spacing:2px;margin:4px 0}
+      .hdr h3{font-size:11px;color:#666;margin:2px 0}
+      .badge-restricted{background:#b91c1c;color:#fff;padding:2px 10px;font-size:10px;letter-spacing:2px;border-radius:3px;display:inline-block;margin-top:6px}
+      table{width:100%;border-collapse:collapse;margin-top:16px}
+      th,td{border:1px solid #ccc;padding:7px;font-size:11px;text-align:left}
+      th{background:#f0f0f0;font-weight:700}
+      .footer{margin-top:24px;display:flex;justify-content:space-between;font-size:10px;color:#666;border-top:1px solid #ccc;padding-top:10px}
+    </style>
+  </head><body>
+    <div class="hdr">
+      <div style="font-size:28px;color:#166534">✈</div>
+      <h1>NIGERIAN AIR FORCE</h1>
+      <h2>115 SPECIAL OPERATIONS GROUP</h2>
+      <h3>CREW REGISTRY — PERSONNEL DATABASE</h3>
+      <span class="badge-restricted">RESTRICTED</span>
+    </div>
+    <table>
+      <thead><tr><th>Svc No.</th><th>Rank</th><th>Name</th><th>Specialization</th><th>Aircraft Type(s)</th><th>Status</th><th>Currency</th><th>Total Hrs</th><th>Missions</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="9">No crew records</td></tr>'}</tbody>
+    </table>
+    <div class="footer">
+      <span>Generated: ${new Date().toLocaleString()}</span>
+      <span>Total Personnel: ${data.length}</span>
+      <span>RESTRICTED</span>
+    </div>
+  </body></html>`);
+  win.document.close();
+  win.print();
+}
 
 async function recalculateCrewTotals(){
   if(!confirm('This will rebuild ALL crew flight hours and mission counts from scratch by scanning every mission. Continue?')) return;
