@@ -348,8 +348,17 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <div class="fg"><label>Mission Number</label><input type="text" id="mNumber" readonly placeholder="Auto-generated"/></div>
           <div class="fg"><label>Mission Type *</label><select id="mType"><option value="">Select...</option></select></div>
           <div class="fg"><label>Area of Operation</label><input type="text" id="mArea"/></div>
+          <div class="fg"><label>Location Name</label><input type="text" id="mLocation" placeholder="e.g. Maiduguri, Borno"/></div>
+          <div class="fg"><label>Latitude</label><input type="number" id="mLat" step="0.000001" placeholder="e.g. 11.8333" oninput="updateMiniMap()"/></div>
+          <div class="fg"><label>Longitude</label><input type="number" id="mLng" step="0.000001" placeholder="e.g. 13.1500" oninput="updateMiniMap()"/></div>
           <div class="fg"><label>Classification Level</label><select id="mClass"><option>RESTRICTED</option><option>CONFIDENTIAL</option><option>SECRET</option></select></div>
           <div class="fg"><label>Mission Priority</label><select id="mPriority"><option>ROUTINE</option><option>PRIORITY</option><option>IMMEDIATE</option><option>FLASH</option></select></div>
+        </div>
+        <div id="miniMapWrap" style="margin-top:14px;display:none">
+          <div class="section-divider">LOCATION PREVIEW</div>
+          <div style="position:relative;height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+            <svg id="miniMap" viewBox="0 0 600 650" style="width:100%;height:100%;background:var(--bg)"></svg>
+          </div>
         </div>
       </div>
       <div class="card"><div class="card-title">Aircraft Information</div>
@@ -405,6 +414,32 @@ tr:hover td{background:rgba(34,197,94,.04)}
         </div>
         <div class="tbl-wrap"><table><thead><tr><th>Mission No.</th><th>Date</th><th>Type</th><th>Operation</th><th>Aircraft</th><th>Sorties</th><th>Hrs</th><th>Outcome</th><th>Actions</th></tr></thead><tbody id="recordsTbl"></tbody></table></div>
         <div class="pagination" id="recPagination"></div>
+      </div>
+    </div>
+
+    <!-- NIGERIA MAP -->
+    <div class="page" id="pageMapView">
+      <div class="page-title">NIGERIA OPERATIONS MAP</div><div class="page-sub mono">MISSION LOCATIONS BY COORDINATE</div>
+      <div class="card">
+        <div class="search-bar">
+          <select id="mapMissionType" onchange="renderMapView()"><option value="">All Mission Types</option></select>
+          <select id="mapOutcome" onchange="renderMapView()"><option value="">All Outcomes</option><option>Successful</option><option>Partially Successful</option><option>Failed</option><option>Aborted</option></select>
+          <input type="date" id="mapFrom" onchange="renderMapView()"/>
+          <input type="date" id="mapTo" onchange="renderMapView()"/>
+        </div>
+        <div style="position:relative;background:var(--bg);border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+          <svg id="nigeriaMap" viewBox="0 0 600 650" style="width:100%;height:auto;display:block;max-height:75vh"></svg>
+          <div id="mapTooltip" style="display:none;position:absolute;background:var(--panel);border:1px solid var(--primary);border-radius:6px;padding:10px 12px;font-size:12px;pointer-events:none;z-index:50;max-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.5)"></div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--primary);margin-right:6px"></span>Successful</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--warn);margin-right:6px"></span>Partially Successful</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);margin-right:6px"></span>Failed/Aborted</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Plotted Missions (<span id="mapCount">0</span>)</div>
+        <div class="tbl-wrap"><table><thead><tr><th>Mission No.</th><th>Date</th><th>Location</th><th>Coordinates</th><th>Type</th><th>Outcome</th></tr></thead><tbody id="mapMissionsTbl"></tbody></table></div>
       </div>
     </div>
 
@@ -619,6 +654,7 @@ const firebaseConfig = {
   appId: "1:413137616214:web:b36193702e22c51e6b6af7",
   measurementId: "G-P068DY5T3R"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -808,6 +844,7 @@ const navItems=[
   {id:'dashboard',label:'Dashboard',icon:'📊',roles:['super_admin','command_admin','analyst','viewer']},
   {id:'missionEntry',label:'Mission Data Entry',icon:'✍',roles:['super_admin','command_admin','analyst']},
   {id:'missionRecords',label:'Mission Records',icon:'📋',roles:['super_admin','command_admin','analyst','viewer']},
+  {id:'mapView',label:'Nigeria Map',icon:'🗺',roles:['super_admin','command_admin','analyst','viewer']},
   {id:'analysis',label:'Analysis & Statistics',icon:'📈',roles:['super_admin','command_admin','analyst']},
   {id:'reports',label:'Monthly Reports',icon:'📄',roles:['super_admin','command_admin','analyst']},
   {id:'crew',label:'Crew Registry',icon:'👨‍✈️',roles:['super_admin','command_admin','analyst']},
@@ -843,11 +880,12 @@ function navigate(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
   document.querySelectorAll('.bn-item').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const pg={dashboard:'pageDashboard',missionEntry:'pageMissionEntry',missionRecords:'pageMissionRecords',analysis:'pageAnalysis',reports:'pageReports',crew:'pageCrew',aircraft:'pageAircraft',users:'pageUsers',audit:'pageAudit',settings:'pageSettings'}[id];
+  const pg={dashboard:'pageDashboard',missionEntry:'pageMissionEntry',missionRecords:'pageMissionRecords',mapView:'pageMapView',analysis:'pageAnalysis',reports:'pageReports',crew:'pageCrew',aircraft:'pageAircraft',users:'pageUsers',audit:'pageAudit',settings:'pageSettings'}[id];
   if(pg)document.getElementById(pg).classList.add('active');
   if(id==='dashboard')renderDashboard();
   if(id==='missionEntry')initMissionForm();
   if(id==='missionRecords')renderRecords();
+  if(id==='mapView')renderMapView();
   if(id==='analysis')loadAnalysis();
   if(id==='crew')renderCrew();
   if(id==='aircraft')renderAircraft();
@@ -1089,6 +1127,9 @@ async function saveMission(){
     const payload={
       date:mDate,missionNumber:document.getElementById('mNumber').value,missionType:mType,
       areaOfOperation:document.getElementById('mArea').value,
+      locationName:document.getElementById('mLocation').value,
+      latitude: document.getElementById('mLat').value ? +document.getElementById('mLat').value : null,
+      longitude: document.getElementById('mLng').value ? +document.getElementById('mLng').value : null,
       classification:document.getElementById('mClass').value,priority:document.getElementById('mPriority').value,
       aircraftType:document.getElementById('mAcType').value,tailNumber:mTail,
       fuelConsumed:+document.getElementById('mFuelCon').value||0,
@@ -1146,10 +1187,11 @@ async function saveMission(){
 }
 
 function clearMissionForm(){
-  ['mDate','mNumber','mArea','mFuelCon','mSorties','mFlightHrs','mTakeoff','mLanding','mBlock','mRemarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['mDate','mNumber','mArea','mLocation','mLat','mLng','mFuelCon','mSorties','mFlightHrs','mTakeoff','mLanding','mBlock','mRemarks'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('mType').value='';document.getElementById('mAcType').value='';document.getElementById('mTail').value='';
   document.getElementById('crewRows').innerHTML='';document.getElementById('mNumber').value=genMissionNumber();
   document.getElementById('mDate').value=new Date().toISOString().slice(0,10);editingMissionId=null;addCrewRow();
+  document.getElementById('miniMapWrap').style.display='none';
 }
 
 // ── MISSION RECORDS ──
@@ -1211,6 +1253,9 @@ async function editMission(id){
   setTimeout(()=>{
     document.getElementById('mDate').value=m.date||'';document.getElementById('mNumber').value=m.missionNumber||'';
     document.getElementById('mArea').value=m.areaOfOperation||'';
+    document.getElementById('mLocation').value=m.locationName||'';
+    document.getElementById('mLat').value=m.latitude??'';
+    document.getElementById('mLng').value=m.longitude??'';
     document.getElementById('mClass').value=m.classification||'RESTRICTED';document.getElementById('mPriority').value=m.priority||'ROUTINE';
     document.getElementById('mFuelCon').value=m.fuelConsumed||'';
     document.getElementById('mSorties').value=m.sorties||'';document.getElementById('mFlightHrs').value=m.flightHoursDisplay||decimalToHmm(m.flightHours);
@@ -1218,6 +1263,7 @@ async function editMission(id){
     document.getElementById('mOutcome').value=m.outcome||'Successful';document.getElementById('mRemarks').value=m.remarks||'';
     document.getElementById('mType').value=m.missionType||'';document.getElementById('mAcType').value=m.aircraftType||'';document.getElementById('mTail').value=m.tailNumber||'';
     document.getElementById('crewRows').innerHTML='';(m.crew||[]).forEach(c=>addCrewRow(c));
+    updateMiniMap();
   },100);
 }
 
@@ -1684,7 +1730,193 @@ function downloadTemplate(){
   XLSX.writeFile(wb,'NAF115_Mission_Import_Template.xlsx');
 }
 
-// ── UTILS ──
+// ── NIGERIA MAP ──
+// Bounding box used for lat/lng → SVG projection — focused on Niger Delta / South-South region
+const NIGERIA_BOUNDS = { latMin: 4.0, latMax: 7.5, lngMin: 4.5, lngMax: 9.0 };
+
+// Reference cities/locations for the South-South region of interest
+const NIGERIA_CITIES = [
+  {name:'Port Harcourt', lat:4.8156, lng:7.0498},
+  {name:'Yenagoa', lat:4.9267, lng:6.2676},
+  {name:'Calabar', lat:4.9757, lng:8.3417},
+  {name:'Benin City', lat:6.3350, lng:5.6037},
+  {name:'Uyo', lat:5.0377, lng:7.9128},
+  {name:'Asaba', lat:6.1992, lng:6.7330},
+  {name:'Akure', lat:7.2526, lng:5.1931},
+  {name:'Warri', lat:5.5160, lng:5.7500}
+];
+
+function latLngToSVG(lat, lng){
+  const x = ((lng - NIGERIA_BOUNDS.lngMin) / (NIGERIA_BOUNDS.lngMax - NIGERIA_BOUNDS.lngMin)) * 600;
+  const y = ((NIGERIA_BOUNDS.latMax - lat) / (NIGERIA_BOUNDS.latMax - NIGERIA_BOUNDS.latMin)) * 650;
+  return { x, y };
+}
+
+// State label zones for the South-South focus area (approximate centers)
+const FOCUS_STATES = [
+  {name:'Port Harcourt (Rivers)', lat:4.85, lng:6.95},
+  {name:'Bayelsa',  lat:4.85, lng:6.20},
+  {name:'Cross River', lat:5.5,  lng:8.4},
+  {name:'Edo (Benin)',  lat:6.6,  lng:5.85},
+  {name:'Akwa Ibom', lat:4.95, lng:7.85},
+  {name:'Ondo',     lat:7.1,  lng:5.0},
+  {name:'Delta',    lat:5.7,  lng:6.0}
+];
+
+function buildMapSVG(missions, svgId, tooltipId){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+
+  let html = `
+    <defs>
+      <radialGradient id="bgGlow" cx="50%" cy="40%" r="70%">
+        <stop offset="0%" stop-color="#0f1e14"/>
+        <stop offset="100%" stop-color="#0A0E1A"/>
+      </radialGradient>
+    </defs>
+    <rect width="600" height="650" fill="url(#bgGlow)"/>
+  `;
+
+  // State region labels (no border outline — just soft zone markers)
+  FOCUS_STATES.forEach(s=>{
+    const p = latLngToSVG(s.lat, s.lng);
+    html += `<circle cx="${p.x}" cy="${p.y}" r="70" fill="rgba(34,197,94,0.04)" stroke="rgba(34,197,94,0.2)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="${p.x}" y="${p.y}" font-size="13" fill="#22C55E" font-family="Rajdhani" font-weight="700" text-anchor="middle" opacity="0.7">${s.name}</text>`;
+  });
+
+  // City reference dots + labels
+  NIGERIA_CITIES.forEach(c=>{
+    const p = latLngToSVG(c.lat, c.lng);
+    html += `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="#64748b"/>
+      <text x="${p.x+6}" y="${p.y+3}" font-size="9" fill="#94a3b8" font-family="Share Tech Mono">${c.name}</text>`;
+  });
+
+  // Mission markers
+  missions.forEach(m=>{
+    if(m.latitude==null || m.longitude==null) return;
+    const p = latLngToSVG(+m.latitude, +m.longitude);
+    if(p.x<0||p.x>600||p.y<0||p.y>650) return;
+    let color = '#22C55E';
+    if(m.outcome==='Partially Successful') color='#F59E0B';
+    if(m.outcome==='Failed'||m.outcome==='Aborted') color='#EF4444';
+    html += `<circle class="mission-marker" data-mission='${JSON.stringify({
+        num:m.missionNumber||'', loc:m.locationName||'—', date:m.date||'', type:m.missionType||'',
+        outcome:m.outcome||'', lat:m.latitude, lng:m.longitude
+      }).replace(/'/g,"&apos;")}'
+      cx="${p.x}" cy="${p.y}" r="7" fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2" style="cursor:pointer">
+      <animate attributeName="r" values="7;10;7" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}" style="pointer-events:none"/>`;
+  });
+
+  svg.innerHTML = html;
+
+  // Attach hover/click tooltips
+  const tooltip = document.getElementById(tooltipId);
+  if(tooltip){
+    svg.querySelectorAll('.mission-marker').forEach(marker=>{
+      marker.addEventListener('mouseenter', e=>{
+        const d = JSON.parse(marker.dataset.mission);
+        tooltip.innerHTML = `
+          <div style="color:var(--primary);font-weight:700;margin-bottom:4px">${d.num}</div>
+          <div>📍 ${d.loc}</div>
+          <div>📅 ${d.date}</div>
+          <div>🎯 ${d.type}</div>
+          <div>${outcomeBadge(d.outcome)}</div>
+          <div style="color:var(--muted);font-size:10px;margin-top:4px">${d.lat}, ${d.lng}</div>`;
+        tooltip.style.display='block';
+        const rect = svg.getBoundingClientRect();
+        const cx = parseFloat(marker.getAttribute('cx'))/600*rect.width;
+        const cy = parseFloat(marker.getAttribute('cy'))/650*rect.height;
+        tooltip.style.left = Math.min(cx+10, rect.width-250) + 'px';
+        tooltip.style.top = Math.max(cy-10, 0) + 'px';
+      });
+      marker.addEventListener('mouseleave', ()=>{ tooltip.style.display='none'; });
+    });
+  }
+}
+
+function renderMapView(){
+  populateSelect('mapMissionType', refData.missionTypes);
+  const type = document.getElementById('mapMissionType').value;
+  const outcome = document.getElementById('mapOutcome').value;
+  const from = document.getElementById('mapFrom').value;
+  const to = document.getElementById('mapTo').value;
+
+  let data = allMissions.filter(m => m.latitude!=null && m.longitude!=null);
+  if(type) data = data.filter(m=>m.missionType===type);
+  if(outcome) data = data.filter(m=>m.outcome===outcome);
+  if(from) data = data.filter(m=>m.date>=from);
+  if(to) data = data.filter(m=>m.date<=to);
+
+  buildMapSVG(data, 'nigeriaMap', 'mapTooltip');
+
+  document.getElementById('mapCount').textContent = data.length;
+  const tbl = document.getElementById('mapMissionsTbl');
+  tbl.innerHTML = data.length ? data.map(m=>`
+    <tr>
+      <td class="mono">${m.missionNumber||'—'}</td>
+      <td>${m.date||'—'}</td>
+      <td>${m.locationName||'—'}</td>
+      <td class="mono">${m.latitude}, ${m.longitude}</td>
+      <td><span class="badge badge-info">${m.missionType||'—'}</span></td>
+      <td>${outcomeBadge(m.outcome)}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No missions with coordinates found for this filter</td></tr>`;
+}
+
+// Mini-map preview on the Mission Entry form
+window.updateMiniMap = function(){
+  const lat = parseFloat(document.getElementById('mLat').value);
+  const lng = parseFloat(document.getElementById('mLng').value);
+  const wrap = document.getElementById('miniMapWrap');
+  if(isNaN(lat) || isNaN(lng)){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  buildMapSVG([{ latitude:lat, longitude:lng, missionNumber:document.getElementById('mNumber').value, locationName:document.getElementById('mLocation').value, date:document.getElementById('mDate').value, missionType:document.getElementById('mType').value, outcome:'Successful' }], 'miniMap', null);
+};
+
+// ── DMS → DECIMAL CONVERTER ──
+window.toggleDMSConverter = function(){
+  const el = document.getElementById('dmsConverter');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+window.convertDMSToDecimal = function(){
+  const latDeg = parseFloat(document.getElementById('dmsLatDeg').value) || 0;
+  const latMin = parseFloat(document.getElementById('dmsLatMin').value) || 0;
+  const latSec = parseFloat(document.getElementById('dmsLatSec').value) || 0;
+  const latDir = document.getElementById('dmsLatDir').value;
+
+  const lngDeg = parseFloat(document.getElementById('dmsLngDeg').value) || 0;
+  const lngMin = parseFloat(document.getElementById('dmsLngMin').value) || 0;
+  const lngSec = parseFloat(document.getElementById('dmsLngSec').value) || 0;
+  const lngDir = document.getElementById('dmsLngDir').value;
+
+  if(!document.getElementById('dmsLatDeg').value || !document.getElementById('dmsLngDeg').value){
+    notify('Enter at least the degrees for latitude and longitude', 'warn');
+    return;
+  }
+
+  let lat = latDeg + (latMin/60) + (latSec/3600);
+  let lng = lngDeg + (lngMin/60) + (lngSec/3600);
+
+  if(latDir === 'S') lat = -lat;
+  if(lngDir === 'W') lng = -lng;
+
+  lat = Math.round(lat * 10000) / 10000;
+  lng = Math.round(lng * 10000) / 10000;
+
+  // Sanity check against Nigeria's bounding box
+  let warning = '';
+  if(lat < NIGERIA_BOUNDS.latMin || lat > NIGERIA_BOUNDS.latMax || lng < NIGERIA_BOUNDS.lngMin || lng > NIGERIA_BOUNDS.lngMax){
+    warning = ' ⚠ Outside expected Nigeria range — double-check your input.';
+  }
+
+  document.getElementById('mLat').value = lat;
+  document.getElementById('mLng').value = lng;
+  document.getElementById('dmsResult').textContent = `Converted: ${lat}, ${lng}${warning}`;
+  updateMiniMap();
+  notify('Coordinates converted and filled in', 'success');
+};
 function outcomeBadge(o){const map={'Successful':'badge-success','Partially Successful':'badge-warn','Failed':'badge-danger','Aborted':'badge-gray'};return`<span class="badge ${map[o]||'badge-gray'}">${o||'—'}</span>`;}
 function canEdit(){return['super_admin','command_admin','analyst'].includes(currentRole);}
 function canDelete(){return['super_admin','command_admin'].includes(currentRole);}
