@@ -5,13 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0A0E1A"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="NAF MDMAS"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <title>NAF 115 SOG — MDMAS</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+#leafletMap{height:560px;width:100%;border-radius:8px;border:1px solid var(--border);z-index:1}
+.leaflet-popup-content-wrapper{background:var(--panel);border:1px solid var(--primary);border-radius:8px;color:var(--text);font-family:'Rajdhani',sans-serif}
+.leaflet-popup-tip{background:var(--panel)}
+.leaflet-popup-content{font-size:13px;line-height:1.7;margin:10px 14px}
+.leaflet-popup-content .pop-title{color:var(--primary);font-weight:700;font-size:15px;margin-bottom:4px;letter-spacing:1px}
+.leaflet-popup-content .pop-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-top:4px}
+.map-layer-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;transition:all .2s}
+.map-layer-btn.active{background:var(--primary);color:#000;border-color:var(--primary)}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -349,17 +360,13 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <div class="fg"><label>Mission Type *</label><select id="mType"><option value="">Select...</option></select></div>
           <div class="fg"><label>Area of Operation</label><input type="text" id="mArea"/></div>
           <div class="fg"><label>Location Name</label><input type="text" id="mLocation" placeholder="e.g. Maiduguri, Borno"/></div>
-          <div class="fg"><label>Latitude</label><input type="number" id="mLat" step="0.000001" placeholder="e.g. 11.8333" oninput="updateMiniMap()"/></div>
-          <div class="fg"><label>Longitude</label><input type="number" id="mLng" step="0.000001" placeholder="e.g. 13.1500" oninput="updateMiniMap()"/></div>
+          <div class="fg"><label>Latitude</label><input type="text" inputmode="decimal" id="mLat" placeholder="e.g. 11.8333 or 11°50'00.0&quot;N" oninput="updateMiniMap()" onpaste="handleCoordPaste(event,'mLat')" onblur="handleCoordBlur('mLat')"/></div>
+          <div class="fg"><label>Longitude</label><input type="text" inputmode="decimal" id="mLng" placeholder="e.g. 13.1500 or 13°09'00.0&quot;E" oninput="updateMiniMap()" onpaste="handleCoordPaste(event,'mLng')" onblur="handleCoordBlur('mLng')"/></div>
           <div class="fg"><label>Classification Level</label><select id="mClass"><option>RESTRICTED</option><option>CONFIDENTIAL</option><option>SECRET</option></select></div>
           <div class="fg"><label>Mission Priority</label><select id="mPriority"><option>ROUTINE</option><option>PRIORITY</option><option>IMMEDIATE</option><option>FLASH</option></select></div>
         </div>
-        <div id="miniMapWrap" style="margin-top:14px;display:none">
-          <div class="section-divider">LOCATION PREVIEW</div>
-          <div style="position:relative;height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
-            <svg id="miniMap" viewBox="0 0 600 650" style="width:100%;height:100%;background:var(--bg)"></svg>
-          </div>
-        </div>
+      </div>
+      <div class="card"><div class="card-title">Aircraft Information</div>
       </div>
       <div class="card"><div class="card-title">Aircraft Information</div>
         <div class="form-grid">
@@ -417,29 +424,50 @@ tr:hover td{background:rgba(34,197,94,.04)}
       </div>
     </div>
 
-    <!-- NIGERIA MAP -->
+    <!-- OPERATIONS MAP -->
     <div class="page" id="pageMapView">
-      <div class="page-title">NIGERIA OPERATIONS MAP</div><div class="page-sub mono">MISSION LOCATIONS BY COORDINATE</div>
+      <div class="page-title">OPERATIONS MAP</div>
+      <div class="page-sub mono">REAL-TIME MISSION LOCATIONS — LEAFLET + OPENSTREETMAP</div>
       <div class="card">
-        <div class="search-bar">
-          <select id="mapMissionType" onchange="renderMapView()"><option value="">All Mission Types</option></select>
-          <select id="mapOutcome" onchange="renderMapView()"><option value="">All Outcomes</option><option>Successful</option><option>Partially Successful</option><option>Failed</option><option>Aborted</option></select>
-          <input type="date" id="mapFrom" onchange="renderMapView()"/>
-          <input type="date" id="mapTo" onchange="renderMapView()"/>
+        <!-- Filters -->
+        <div class="search-bar" style="margin-bottom:12px">
+          <select id="mapMissionType" onchange="refreshMapMarkers()"><option value="">All Mission Types</option></select>
+          <select id="mapOutcome" onchange="refreshMapMarkers()">
+            <option value="">All Outcomes</option>
+            <option>Successful</option><option>Partially Successful</option><option>Failed</option><option>Aborted</option>
+          </select>
+          <input type="date" id="mapFrom" onchange="refreshMapMarkers()" placeholder="From"/>
+          <input type="date" id="mapTo" onchange="refreshMapMarkers()" placeholder="To"/>
+          <button class="btn btn-secondary btn-sm" onclick="refreshMapMarkers()">🔍 FILTER</button>
+          <button class="btn btn-secondary btn-sm" onclick="resetMapFilters()">✕ RESET</button>
         </div>
-        <div style="position:relative;background:var(--bg);border-radius:8px;overflow:hidden;border:1px solid var(--border)">
-          <svg id="nigeriaMap" viewBox="0 0 600 650" style="width:100%;height:auto;display:block;max-height:75vh"></svg>
-          <div id="mapTooltip" style="display:none;position:absolute;background:var(--panel);border:1px solid var(--primary);border-radius:6px;padding:10px 12px;font-size:12px;pointer-events:none;z-index:50;max-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.5)"></div>
+        <!-- Layer toggle -->
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="map-layer-btn active" id="btnStreet" onclick="setMapLayer('street')">🗺 Street</button>
+          <button class="map-layer-btn" id="btnSatellite" onclick="setMapLayer('satellite')">🛰 Satellite</button>
+          <button class="map-layer-btn" id="btnTerrain" onclick="setMapLayer('terrain')">⛰ Terrain</button>
+          <button class="map-layer-btn" id="btnDark" onclick="setMapLayer('dark')">🌑 Dark</button>
+          <span style="margin-left:auto;font-size:12px;color:var(--muted);align-self:center">
+            <span id="mapMarkerCount">0</span> missions plotted
+          </span>
         </div>
-        <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--primary);margin-right:6px"></span>Successful</span>
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--warn);margin-right:6px"></span>Partially Successful</span>
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);margin-right:6px"></span>Failed/Aborted</span>
+        <!-- Map -->
+        <div id="leafletMap"></div>
+        <!-- Legend -->
+        <div style="display:flex;gap:20px;margin-top:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+          <span>🟢 Successful</span>
+          <span>🟡 Partially Successful</span>
+          <span>🔴 Failed / Aborted</span>
+          <span>⚪ Unknown</span>
         </div>
       </div>
+      <!-- Missions table -->
       <div class="card">
-        <div class="card-title">Plotted Missions (<span id="mapCount">0</span>)</div>
-        <div class="tbl-wrap"><table><thead><tr><th>Mission No.</th><th>Date</th><th>Location</th><th>Coordinates</th><th>Type</th><th>Outcome</th></tr></thead><tbody id="mapMissionsTbl"></tbody></table></div>
+        <div class="card-title">PLOTTED MISSIONS (<span id="mapTableCount">0</span>)</div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Mission No.</th><th>Date</th><th>Location</th><th>Lat</th><th>Lng</th><th>Type</th><th>Outcome</th><th></th></tr></thead>
+          <tbody id="mapMissionsTbl"></tbody></table>
+        </div>
       </div>
     </div>
 
@@ -638,7 +666,10 @@ tr:hover td{background:rgba(34,197,94,.04)}
 
 <div id="notif"></div>
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner" style="width:40px;height:40px;border-width:3px"></div><p id="loadingMsg">LOADING...</p></div>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, createUserWithEmailAndPassword, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -845,7 +876,7 @@ const navItems=[
   {id:'dashboard',label:'Dashboard',icon:'📊',roles:['super_admin','command_admin','analyst','viewer']},
   {id:'missionEntry',label:'Mission Data Entry',icon:'✍',roles:['super_admin','command_admin','analyst']},
   {id:'missionRecords',label:'Mission Records',icon:'📋',roles:['super_admin','command_admin','analyst','viewer']},
-  {id:'mapView',label:'Nigeria Map',icon:'🗺',roles:['super_admin','command_admin','analyst','viewer']},
+  {id:'mapView',label:'Operations Map',icon:'🗺',roles:['super_admin','command_admin','analyst','viewer']},
   {id:'analysis',label:'Analysis & Statistics',icon:'📈',roles:['super_admin','command_admin','analyst']},
   {id:'reports',label:'Monthly Reports',icon:'📄',roles:['super_admin','command_admin','analyst']},
   {id:'crew',label:'Crew Registry',icon:'👨‍✈️',roles:['super_admin','command_admin','analyst']},
@@ -1128,9 +1159,9 @@ async function saveMission(){
     const payload={
       date:mDate,missionNumber:document.getElementById('mNumber').value,missionType:mType,
       areaOfOperation:document.getElementById('mArea').value,
-      locationName:document.getElementById('mLocation').value,
-      latitude: document.getElementById('mLat').value ? +document.getElementById('mLat').value : null,
-      longitude: document.getElementById('mLng').value ? +document.getElementById('mLng').value : null,
+      locationName:document.getElementById('mLocation').value||'',
+      latitude:coordFieldToDecimal('mLat'),
+      longitude:coordFieldToDecimal('mLng'),
       classification:document.getElementById('mClass').value,priority:document.getElementById('mPriority').value,
       aircraftType:document.getElementById('mAcType').value,tailNumber:mTail,
       fuelConsumed:+document.getElementById('mFuelCon').value||0,
@@ -1192,7 +1223,6 @@ function clearMissionForm(){
   document.getElementById('mType').value='';document.getElementById('mAcType').value='';document.getElementById('mTail').value='';
   document.getElementById('crewRows').innerHTML='';document.getElementById('mNumber').value=genMissionNumber();
   document.getElementById('mDate').value=new Date().toISOString().slice(0,10);editingMissionId=null;addCrewRow();
-  document.getElementById('miniMapWrap').style.display='none';
 }
 
 // ── MISSION RECORDS ──
@@ -1264,7 +1294,6 @@ async function editMission(id){
     document.getElementById('mOutcome').value=m.outcome||'Successful';document.getElementById('mRemarks').value=m.remarks||'';
     document.getElementById('mType').value=m.missionType||'';document.getElementById('mAcType').value=m.aircraftType||'';document.getElementById('mTail').value=m.tailNumber||'';
     document.getElementById('crewRows').innerHTML='';(m.crew||[]).forEach(c=>addCrewRow(c));
-    updateMiniMap();
   },100);
 }
 
@@ -1824,7 +1853,7 @@ function buildMapSVG(missions, svgId, tooltipId){
           <div>📅 ${d.date}</div>
           <div>🎯 ${d.type}</div>
           <div>${outcomeBadge(d.outcome)}</div>
-          <div style="color:var(--muted);font-size:10px;margin-top:4px">${d.lat}, ${d.lng}</div>`;
+          <div style="color:var(--muted);font-size:10px;margin-top:4px">${coordsToDMS(d.lat, d.lng)}</div>`;
         tooltip.style.display='block';
         const rect = svg.getBoundingClientRect();
         const cx = parseFloat(marker.getAttribute('cx'))/600*rect.width;
@@ -1837,42 +1866,253 @@ function buildMapSVG(missions, svgId, tooltipId){
   }
 }
 
-function renderMapView(){
+// ── LEAFLET OPERATIONS MAP — South-South / Niger Delta focus ──
+// Covers: Port Harcourt (Rivers), Bayelsa, Cross River, Edo (Benin), Akwa Ibom, Ondo, Delta
+const SOUTH_SOUTH_BOUNDS = [[3.9, 4.4], [7.6, 8.9]];
+const SOUTH_SOUTH_CENTER = [5.35, 6.55];
+
+let leafletMapInstance = null;
+let mapMarkersLayer = null;
+let activeMapTileLayer = null;
+
+function getMapTileConfig(type){
+  const cfgs = {
+    street:    { url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                 opts:{ attribution:'&copy; OpenStreetMap contributors', maxZoom:19, subdomains:'abc' } },
+    satellite: { url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                 opts:{ attribution:'Tiles &copy; Esri, Maxar, Earthstar Geographics', maxZoom:19 } },
+    terrain:   { url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                 opts:{ attribution:'&copy; OpenTopoMap (CC-BY-SA)', maxZoom:17, subdomains:'abc' } },
+    dark:      { url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                 opts:{ attribution:'&copy; CARTO', maxZoom:19, subdomains:'abcd' } }
+  };
+  return cfgs[type] || cfgs.street;
+}
+
+function initLeafletMap(){
+  if(leafletMapInstance) return leafletMapInstance;
+  const el = document.getElementById('leafletMap');
+  if(!el || typeof L === 'undefined') return null;
+
+  leafletMapInstance = L.map('leafletMap', { zoomControl:true, minZoom:6, maxZoom:19 })
+    .fitBounds(SOUTH_SOUTH_BOUNDS);
+
+  const cfg = getMapTileConfig('street');
+  activeMapTileLayer = L.tileLayer(cfg.url, cfg.opts).addTo(leafletMapInstance);
+
+  mapMarkersLayer = L.layerGroup().addTo(leafletMapInstance);
+
+  // South-South state / hub reference labels (soft, non-interactive)
+  FOCUS_STATES.forEach(s=>{
+    L.marker([s.lat, s.lng], {
+      icon: L.divIcon({
+        className:'ss-state-label',
+        html:`<div style="color:#22C55E;font:700 11px 'Rajdhani',sans-serif;letter-spacing:.5px;text-shadow:0 1px 4px #000,0 0 2px #000;white-space:nowrap;pointer-events:none">${s.name}</div>`,
+        iconSize:[0,0]
+      }),
+      interactive:false, keyboard:false
+    }).addTo(leafletMapInstance);
+  });
+
+  return leafletMapInstance;
+}
+
+function setMapLayer(type){
+  const map = initLeafletMap();
+  if(!map) return;
+  if(activeMapTileLayer) map.removeLayer(activeMapTileLayer);
+  const cfg = getMapTileConfig(type);
+  activeMapTileLayer = L.tileLayer(cfg.url, cfg.opts).addTo(map);
+  ['Street','Satellite','Terrain','Dark'].forEach(label=>{
+    const btn = document.getElementById('btn'+label);
+    if(btn) btn.classList.toggle('active', label.toLowerCase()===type);
+  });
+}
+
+// Decimal degrees → Degrees° Minutes' Seconds" + hemisphere (e.g. 4°51'00.0"N)
+function decimalToDMS(decimal, isLat){
+  if(decimal==null || decimal==='' || isNaN(decimal)) return '—';
+  const num = +decimal;
+  const abs = Math.abs(num);
+  const deg = Math.floor(abs);
+  const minFloat = (abs - deg) * 60;
+  let min = Math.floor(minFloat);
+  let sec = (minFloat - min) * 60;
+  // guard against 60.0" rounding up into the next minute/degree
+  sec = Math.round(sec * 10) / 10;
+  if(sec >= 60){ sec = 0; min += 1; }
+  let d = deg;
+  if(min >= 60){ min = 0; d += 1; }
+  const dir = isLat ? (num >= 0 ? 'N' : 'S') : (num >= 0 ? 'E' : 'W');
+  return `${d}\u00b0${String(min).padStart(2,'0')}'${sec.toFixed(1).padStart(4,'0')}"${dir}`;
+}
+function coordsToDMS(lat, lng){
+  return `${decimalToDMS(lat, true)} ${decimalToDMS(lng, false)}`;
+}
+
+function outcomeMapColor(o){
+  if(o==='Successful') return '#22C55E';
+  if(o==='Partially Successful') return '#F59E0B';
+  if(o==='Failed' || o==='Aborted') return '#EF4444';
+  return '#94a3b8';
+}
+
+function refreshMapMarkers(){
+  const map = initLeafletMap();
   populateSelect('mapMissionType', refData.missionTypes);
   const type = document.getElementById('mapMissionType').value;
   const outcome = document.getElementById('mapOutcome').value;
   const from = document.getElementById('mapFrom').value;
   const to = document.getElementById('mapTo').value;
 
-  let data = allMissions.filter(m => m.latitude!=null && m.longitude!=null);
+  let data = allMissions.filter(m => m.latitude!=null && m.longitude!=null && m.latitude!=='' && m.longitude!=='');
   if(type) data = data.filter(m=>m.missionType===type);
   if(outcome) data = data.filter(m=>m.outcome===outcome);
   if(from) data = data.filter(m=>m.date>=from);
   if(to) data = data.filter(m=>m.date<=to);
 
-  buildMapSVG(data, 'nigeriaMap', 'mapTooltip');
+  if(mapMarkersLayer) mapMarkersLayer.clearLayers();
 
-  document.getElementById('mapCount').textContent = data.length;
+  if(map && mapMarkersLayer){
+    data.forEach(m=>{
+      const lat = +m.latitude, lng = +m.longitude;
+      if(isNaN(lat) || isNaN(lng)) return;
+      const color = outcomeMapColor(m.outcome);
+      L.circleMarker([lat, lng], { radius:8, color, weight:2, fillColor:color, fillOpacity:0.35 })
+        .bindPopup(`
+          <div class="pop-title">${m.missionNumber||'—'}</div>
+          <div>📍 ${m.locationName||'—'}</div>
+          <div>📅 ${m.date||'—'}</div>
+          <div>🎯 ${m.missionType||'—'}</div>
+          <span class="pop-badge" style="background:${color}33;color:${color}">${m.outcome||'—'}</span>
+          <div style="color:var(--muted);font-size:10px;margin-top:6px">${coordsToDMS(lat,lng)}</div>
+          <div style="color:var(--muted);font-size:9px">(${lat}, ${lng})</div>
+        `)
+        .addTo(mapMarkersLayer);
+    });
+  }
+
+  const countEl = document.getElementById('mapMarkerCount');
+  if(countEl) countEl.textContent = data.length;
+  const tableCountEl = document.getElementById('mapTableCount');
+  if(tableCountEl) tableCountEl.textContent = data.length;
+
   const tbl = document.getElementById('mapMissionsTbl');
-  tbl.innerHTML = data.length ? data.map(m=>`
-    <tr>
-      <td class="mono">${m.missionNumber||'—'}</td>
-      <td>${m.date||'—'}</td>
-      <td>${m.locationName||'—'}</td>
-      <td class="mono">${m.latitude}, ${m.longitude}</td>
-      <td><span class="badge badge-info">${m.missionType||'—'}</span></td>
-      <td>${outcomeBadge(m.outcome)}</td>
-    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">No missions with coordinates found for this filter</td></tr>`;
+  if(tbl){
+    tbl.innerHTML = data.length ? data.map(m=>`
+      <tr>
+        <td class="mono">${m.missionNumber||'—'}</td>
+        <td>${m.date||'—'}</td>
+        <td>${m.locationName||'—'}</td>
+        <td class="mono">${decimalToDMS(m.latitude, true)}</td>
+        <td class="mono">${decimalToDMS(m.longitude, false)}</td>
+        <td><span class="badge badge-info">${m.missionType||'—'}</span></td>
+        <td>${outcomeBadge(m.outcome)}</td>
+        <td></td>
+      </tr>`).join('') : `<tr><td colspan="8" class="empty-state">No missions with coordinates found for this filter</td></tr>`;
+  }
 }
 
-// Mini-map preview on the Mission Entry form
+function resetMapFilters(){
+  document.getElementById('mapMissionType').value = '';
+  document.getElementById('mapOutcome').value = '';
+  document.getElementById('mapFrom').value = '';
+  document.getElementById('mapTo').value = '';
+  refreshMapMarkers();
+}
+
+function renderMapView(){
+  const map = initLeafletMap();
+  refreshMapMarkers();
+  // Container was hidden (display:none) while off-screen, so tiles need a
+  // resize kick once the page becomes visible, or they render blank/grey.
+  if(map){
+    setTimeout(()=>{ map.invalidateSize(); map.fitBounds(SOUTH_SOUTH_BOUNDS); }, 60);
+  }
+}
+
+window.refreshMapMarkers = refreshMapMarkers;
+window.setMapLayer = setMapLayer;
+window.resetMapFilters = resetMapFilters;
+
+// Mini-map preview on the Mission Entry form (no-op if the preview container
+// isn't present in this build — guarded so it never throws on input)
 window.updateMiniMap = function(){
+  const wrap = document.getElementById('miniMapWrap');
+  if(!wrap) return;
   const lat = parseFloat(document.getElementById('mLat').value);
   const lng = parseFloat(document.getElementById('mLng').value);
-  const wrap = document.getElementById('miniMapWrap');
   if(isNaN(lat) || isNaN(lng)){ wrap.style.display='none'; return; }
   wrap.style.display='block';
   buildMapSVG([{ latitude:lat, longitude:lng, missionNumber:document.getElementById('mNumber').value, locationName:document.getElementById('mLocation').value, date:document.getElementById('mDate').value, missionType:document.getElementById('mType').value, outcome:'Successful' }], 'miniMap', null);
+};
+
+// ── COORDINATE INPUT: auto-detect DMS and convert to decimal ──
+// Accepts plain decimal ("4.85") or DMS in common written/pasted forms:
+// 4°51'00.0"N | 4° 51' 00.0" N | N4°51'00"  | 4 51 00 N | 4d51m0sN | -4.85
+function parseCoordinateString(input){
+  if(input==null) return null;
+  const str = String(input).trim();
+  if(str==='') return null;
+
+  // Already a plain decimal number
+  if(/^-?\d+(\.\d+)?$/.test(str)) return Math.round(parseFloat(str)*1e6)/1e6;
+
+  const dirMatch = str.match(/([NSEWnsew])/);
+  const dir = dirMatch ? dirMatch[1].toUpperCase() : null;
+  const numsOnly = str.replace(/[NSEWnsew]/g,'').trim();
+  const nums = numsOnly.match(/-?\d+(?:\.\d+)?/g);
+  if(!nums || !nums.length) return null;
+
+  const deg = parseFloat(nums[0]) || 0;
+  const min = nums[1] ? parseFloat(nums[1]) : 0;
+  const sec = nums[2] ? parseFloat(nums[2]) : 0;
+  if(min >= 60 || sec >= 60) return null; // not valid DMS
+
+  let decimal = Math.abs(deg) + (min/60) + (sec/3600);
+  if(deg < 0) decimal = -decimal;
+  if(dir === 'S' || dir === 'W') decimal = -Math.abs(decimal);
+  if(dir === 'N' || dir === 'E') decimal = Math.abs(decimal);
+
+  return Math.round(decimal*1e6)/1e6;
+}
+
+// Resolve whatever is currently in a lat/lng field (decimal or DMS text) to a decimal number
+function coordFieldToDecimal(fieldId){
+  const el = document.getElementById(fieldId);
+  if(!el) return null;
+  const parsed = parseCoordinateString(el.value);
+  return (parsed==null || isNaN(parsed)) ? null : parsed;
+}
+
+window.handleCoordPaste = function(e, fieldId){
+  // let the paste land in the field first, then read+convert the full value
+  setTimeout(()=>{
+    const el = document.getElementById(fieldId);
+    const raw = el.value.trim();
+    const parsed = parseCoordinateString(raw);
+    if(parsed!=null && !isNaN(parsed)){
+      if(String(parsed) !== raw){
+        el.value = parsed;
+        notify('Coordinate converted to decimal', 'success');
+      }
+      updateMiniMap();
+    } else if(raw !== '' && !/^-?\d+(\.\d+)?$/.test(raw)){
+      notify('Could not read that coordinate format — check it and try again', 'warn');
+    }
+  }, 0);
+};
+
+window.handleCoordBlur = function(fieldId){
+  const el = document.getElementById(fieldId);
+  if(!el) return;
+  const raw = el.value.trim();
+  if(raw==='') return;
+  const parsed = parseCoordinateString(raw);
+  if(parsed!=null && !isNaN(parsed) && String(parsed) !== raw){
+    el.value = parsed;
+    updateMiniMap();
+  }
 };
 
 // ── DMS → DECIMAL CONVERTER ──
