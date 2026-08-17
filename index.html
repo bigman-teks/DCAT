@@ -567,7 +567,7 @@ tr:hover td{background:rgba(34,197,94,.04)}
           <input type="text" id="auditSearch" placeholder="Search logs..." oninput="filterAudit()"/>
           <select id="auditAction" onchange="filterAudit()"><option value="">All Actions</option><option>LOGIN</option><option>LOGOUT</option><option>MISSION_CREATE</option><option>MISSION_UPDATE</option><option>MISSION_DELETE</option><option>USER_CREATE</option><option>REPORT_GENERATE</option><option>MISSION_IMPORT</option></select>
         </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditTbl"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th><th>Logout Time</th></tr></thead><tbody id="auditTbl"></tbody></table></div>
         <div class="pagination" id="auditPagination"></div>
       </div>
     </div>
@@ -1242,7 +1242,8 @@ function filterRecords(){
     if(month&&m.date&&m.date.slice(5,7)!==month)return false;if(year&&m.date&&m.date.slice(0,4)!==year)return false;
     if(search&&![m.missionNumber,m.operationName,m.tailNumber,m.missionType].join(' ').toLowerCase().includes(search))return false;
     return true;
-  });recPage=1;drawRecords();
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  recPage=1;drawRecords();
 }
 
 function drawRecords(){
@@ -1577,10 +1578,23 @@ function filterAudit(){
   filteredAudit=allAudit.filter(a=>{if(action&&a.action!==action)return false;if(search&&![a.userName,a.action,a.details].join(' ').toLowerCase().includes(search))return false;return true;});
   auditPage=1;drawAudit();
 }
+function getLogoutTime(entry){
+  if(entry.action!=='LOGIN')return null;
+  const idx=allAudit.indexOf(entry);
+  if(idx<0)return null;
+  for(let j=idx-1;j>=0;j--){
+    const e=allAudit[j];
+    const sameUser=(e.userId&&entry.userId&&e.userId===entry.userId)||e.userName===entry.userName;
+    if(!sameUser)continue;
+    if(e.action==='LOGIN')return null;
+    if(e.action==='LOGOUT')return e.timestamp?.toDate?.()?.toLocaleString()||null;
+  }
+  return null;
+}
 function drawAudit(){
   const start=(auditPage-1)*auditPageSize,page=filteredAudit.slice(start,start+auditPageSize);
   const tbl=document.getElementById('auditTbl');
-  tbl.innerHTML=page.length?page.map(a=>`<tr><td class="mono">${a.timestamp?.toDate?.()?.toLocaleString()||'—'}</td><td>${a.userName||'—'}</td><td><span class="badge badge-info">${a.action||'—'}</span></td><td>${a.details||'—'}</td></tr>`).join(''):`<tr><td colspan="4" class="empty-state">No audit logs</td></tr>`;
+  tbl.innerHTML=page.length?page.map(a=>`<tr><td class="mono">${a.timestamp?.toDate?.()?.toLocaleString()||'—'}</td><td>${a.userName||'—'}</td><td><span class="badge badge-info">${a.action||'—'}</span></td><td>${a.details||'—'}</td><td class="mono">${getLogoutTime(a)||(a.action==='LOGIN'?'<span class="badge badge-warn">Active/No Logout</span>':'—')}</td></tr>`).join(''):`<tr><td colspan="5" class="empty-state">No audit logs</td></tr>`;
   const total=Math.ceil(filteredAudit.length/auditPageSize),pg=document.getElementById('auditPagination');pg.innerHTML='';
   if(total>1)for(let i=1;i<=total;i++){const b=document.createElement('button');b.className=`pg-btn ${i===auditPage?'active':''}`;b.textContent=i;b.onclick=()=>{auditPage=i;drawAudit();};pg.appendChild(b);}
 }
